@@ -79,12 +79,13 @@ func (s *store) next() (ui.Event, bool) {
 // for every frame, so it shows the look in use.
 func homeItems() []ui.Item {
 	return []ui.Item{
+		{Label: "Updates", Sub: "Check for updates, and update everything at once", Icon: "check", Chevron: true},
 		{Label: "Featured themes", Sub: "Picked by the Onion team", Icon: "star", Chevron: true},
 		{Label: "All themes", Sub: "Over 200 from the community", Icon: "list", Chevron: true},
 		{Label: "Icon packs", Sub: "New icons for the menus", Icon: "gear", Chevron: true},
 		{Label: "Apps", Sub: "MiniDeck's apps and community apps", Icon: "plus", Chevron: true},
 		{Label: "Homebrew games", Sub: "Free games their authors let you download", Icon: "play", Chevron: true},
-		{Label: "Ports", Sub: "PC games ported to the Miyoo (guide)", Icon: "dice", Chevron: true},
+		{Label: "Ports", Sub: "PC games ported to the Miyoo", Icon: "dice", Chevron: true},
 		{Label: "Repositories", Sub: "Where the store looks; add your own", Icon: "server", Chevron: true},
 		ui.AppearanceItem(),
 	}
@@ -95,7 +96,8 @@ func (s *store) home() {
 	for {
 		l.Items = homeItems()
 		sc := s.scr
-		top := sc.StaticFrame("MiniMart", "Themes, icon packs, apps and games",
+		free, _ := spaceText(0)
+		top := sc.StaticFrame("MiniMart", "Themes, apps, ports and games · "+free,
 			ui.Hint{Button: "A", Label: "Open"}, ui.AppearanceHint, ui.Hint{Button: "B", Label: "Exit"})
 		l.Draw(sc, image.Rect(20, top, ui.W-26, ui.H-58))
 		sc.Present()
@@ -110,19 +112,21 @@ func (s *store) home() {
 			s.scr.Appearance(s.input)
 		case ui.A:
 			switch l.Sel {
-			case 0, 1:
-				s.themes(l.Sel == 0)
-			case 2:
-				s.iconPacks()
+			case 0:
+				s.updates()
+			case 1, 2:
+				s.themes(l.Sel == 1)
 			case 3:
-				s.appList()
+				s.iconPacks()
 			case 4:
-				s.homebrew()
+				s.appList()
 			case 5:
-				s.ports()
+				s.homebrew()
 			case 6:
-				s.repos()
+				s.ports()
 			case 7:
+				s.repos()
+			case 8:
 				s.scr.Appearance(s.input)
 			}
 		default:
@@ -344,7 +348,9 @@ func (s *store) detail(it Item) {
 		} else if sz < 0 {
 			sc.Text(x, y, "Checking size…", ui.Body, ui.Muted)
 		}
-		y += 40
+		y += 30
+		y = drawSpace(sc, x, y, ui.W-x-24, downloadNeeds(sz))
+		y += 10
 		howTo := "Apply it in Theme Switcher."
 		if it.Icons {
 			howTo = "Apply it in Tweaks › Appearance › Icon packs."
