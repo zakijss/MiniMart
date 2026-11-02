@@ -1,15 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"image"
-	"strings"
 
 	"github.com/zakijss/minideck/tnet"
 	"github.com/zakijss/minideck/ui"
 )
 
-var typeNames = map[string]string{"themes": "Themes and icon packs", "apps": "App catalogue", "ports": "Ports guide"}
+var typeNames = map[string]string{"themes": "Themes and icon packs", "apps": "App catalogue", "ports": "Ports list"}
 
 // repos lists the repositories: A turns one on or off, X removes one you
 // added, Y adds one. The last row is the user's game files location (see
@@ -125,61 +123,4 @@ func (s *store) addRepo() {
 	}
 	s.src = append(s.src, src)
 	s.saveSources()
-}
-
-// ports shows the MiyooMini-Ports list as a guide: ports need your own game
-// files and are installed by hand.
-func (s *store) ports() {
-	var list []Port
-	var err error
-	s.load("Ports", func() ([]Item, error) {
-		list, err = s.f.Ports(s.src)
-		return nil, nil
-	})
-	if err != nil || len(list) == 0 {
-		msg := "Turn on the ports guide in Repositories."
-		if err != nil {
-			msg = "Couldn't load the ports list: " + tnet.Explain(err).Error()
-		}
-		s.scr.Notice(s.input, "Ports", msg)
-		return
-	}
-	l := ui.List{}
-	for {
-		items := make([]ui.Item, len(list))
-		for i, p := range list {
-			sub := p.Status
-			if p.Assets == "owned" {
-				sub += " · needs your game files"
-			}
-			items[i] = ui.Item{Label: p.Name, Sub: sub, Detail: strings.Join(p.Categories, ", "), Chevron: true}
-		}
-		l.Items = items
-		sc := s.scr
-		top := sc.StaticFrame("Ports", fmt.Sprintf("%d games ported to the Miyoo", len(list)),
-			ui.Hint{Button: "A", Label: "Details"}, ui.Hint{Button: "L1/R1", Label: "Page"}, ui.Hint{Button: "B", Label: "Back"})
-		l.Draw(sc, image.Rect(20, top, ui.W-26, ui.H-58))
-		sc.Present()
-		ev, ok := s.next()
-		if !ok {
-			return
-		}
-		switch ev.Button {
-		case ui.B, ui.Menu:
-			return
-		case ui.A:
-			p := list[l.Sel]
-			body := p.Notes
-			if p.Assets == "owned" {
-				body += " You need your own copy of the game's files."
-			}
-			body += " Get it from: " + p.Upstream
-			if len(p.Porter) > 0 {
-				body += " (ported by " + strings.Join(p.Porter, ", ") + ")"
-			}
-			s.scr.Notice(s.input, p.Name, strings.TrimSpace(body))
-		default:
-			l.Handle(ev)
-		}
-	}
 }

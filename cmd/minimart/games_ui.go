@@ -212,6 +212,7 @@ func (s *store) gameDetail(sys system, g Game) {
 			sc.Text(x, y, line, ui.Small, ui.Muted)
 			y += ui.LineHeight(ui.Small)
 		}
+		y = drawSpace(sc, x, y+6, w, downloadNeeds(sz))
 		if msg != "" {
 			y += 8
 			for _, line := range ui.Wrap(ui.Small, msg, w) {

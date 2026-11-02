@@ -2,5 +2,5 @@
 	"label":	"MiniMart",
 	"icon":	"/mnt/SDCARD/App/MiniMart/icon.png",
 	"launch":	"launch.sh",
-	"description":	"Themes, icons, apps and homebrew games"
+	"description":	"Themes, icons, apps, ports and games"
 }

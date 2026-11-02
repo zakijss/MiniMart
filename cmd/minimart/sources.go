@@ -22,8 +22,9 @@ import (
 //	themes  a repository laid out like OnionUI/Themes (its raw base URL):
 //	        themes and icon packs
 //	apps    an app catalogue: a JSON file (see Catalog)
-//	ports   the MiyooMini-Ports list (ports.json): browse only, since ports
-//	        need files you own and have no checksums
+//	ports   a ports list (ports.json, see ports.go): the MiyooMini-Ports
+//	        list, with the pinned releases tools/catalog adds; entries
+//	        without a checksum are a guide only
 //	games   homebrew games: a Homebrew Hub API address (ending in /api/) or
 //	        a game catalogue JSON file (see GameCatalog in games.go)
 type Source struct {
@@ -56,7 +57,7 @@ var defaultSources = []Source{
 	{Name: "MiniDeck", Type: "apps", URL: minideckCatalog, Enabled: true, Builtin: true},
 	{Name: "OnionUI Themes", Type: "themes", URL: "https://raw.githubusercontent.com/OnionUI/Themes/main/", Enabled: true, Builtin: true},
 	{Name: "Community apps", Type: "apps", URL: communityCatalog, Enabled: true, Builtin: true},
-	{Name: "MiyooMini Ports", Type: "ports", URL: "https://raw.githubusercontent.com/Producdevity/MiyooMini-Ports/master/ports.json", Enabled: true, Builtin: true},
+	{Name: "MiyooMini Ports", Type: "ports", URL: portsCatalog, Enabled: true, Builtin: true},
 	{Name: "Homebrew Hub", Type: "games", URL: "https://hh3.gbdev.io/api/", Enabled: true, Builtin: true},
 }
 
@@ -72,7 +73,7 @@ func LoadSources() []Source {
 	out := append([]Source(nil), defaultSources...)
 	for i := range out {
 		for _, s := range saved {
-			if s.Builtin && (s.URL == out[i].URL || s.URL == builtinCatalog && out[i].URL == communityCatalog) {
+			if s.Builtin && (s.URL == out[i].URL || s.URL == builtinCatalog && out[i].URL == communityCatalog || s.URL == upstreamPorts && out[i].URL == portsCatalog) {
 				out[i].Enabled = s.Enabled
 			}
 		}
@@ -336,40 +337,6 @@ func sourcesNote(errs []error) string {
 		note += fmt.Sprintf(" (and %d more)", len(errs)-1)
 	}
 	return note
-}
-
-// Port is one entry of the MiyooMini-Ports list.
-type Port struct {
-	Name       string   `json:"name"`
-	Categories []string `json:"categories"`
-	Status     string   `json:"status"`
-	Assets     string   `json:"assets"` // "owned": needs your own game files
-	Upstream   string   `json:"upstream"`
-	Image      string   `json:"image"`
-	Notes      string   `json:"notes"`
-	Porter     []string `json:"porter"`
-}
-
-// Ports lists the ports of every enabled ports source.
-func (f *fetcher) Ports(ss []Source) ([]Port, error) {
-	var out []Port
-	for _, s := range ss {
-		if !s.Enabled || s.Type != "ports" {
-			continue
-		}
-		b, err := f.cached(s.URL, true)
-		if err != nil {
-			return nil, err
-		}
-		var doc struct {
-			Ports []Port `json:"ports"`
-		}
-		if err := json.Unmarshal(b, &doc); err != nil {
-			return nil, fmt.Errorf("%s: not a ports list", s.Name)
-		}
-		out = append(out, doc.Ports...)
-	}
-	return out, nil
 }
 
 // Validate checks that a new source answers in the expected format, and

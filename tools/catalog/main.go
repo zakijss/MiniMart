@@ -124,6 +124,11 @@ func main() {
 	only := flag.String("only", "", "look at these repositories only (comma-separated owner/repo)")
 	noSearch := flag.Bool("no-search", false, "look only at the seed repositories")
 	dir := flag.String("dir", "tools/catalog", "the folder with exclude.json and hints.json")
+	portsOut := flag.String("ports-out", "", "also write the ports list here (see ports.go)")
+	portsBuiltin := flag.String("ports-builtin", "", "and the store's compiled-in copy of it here (cmd/minimart/ports_builtin.json)")
+	portsList := flag.String("ports-list", upstreamPortsList, "the MiyooMini-Ports list to read")
+	portsOnly := flag.Bool("ports-only", false, "write only the ports list")
+	minPorts := flag.Int("min-ports", 0, "fail, writing no ports list, if fewer installable ports than this are found")
 	flag.Parse()
 	log.SetFlags(0)
 
@@ -144,6 +149,38 @@ func main() {
 		log.Fatal(err)
 	}
 	g.loadPrev(*prevFile, *prevScan)
+
+	if *portsOut != "" {
+		var pex map[string]string
+		if err := readMap(filepath.Join(*dir, "ports-exclude.json"), &pex); err != nil {
+			log.Fatal(err)
+		}
+		doc, err := g.buildPorts(*portsList, pex)
+		if err != nil {
+			log.Fatal(err)
+		}
+		n := 0
+		for _, p := range doc.Ports {
+			if p.Zip != "" {
+				n++
+			}
+		}
+		if n < *minPorts {
+			log.Fatalf("only %d installable ports (fewer than -min-ports %d): nothing written", n, *minPorts)
+		}
+		for _, f := range []string{*portsOut, *portsBuiltin} {
+			if f == "" {
+				continue
+			}
+			if err := writeJSON(f, doc); err != nil {
+				log.Fatal(err)
+			}
+		}
+		log.Printf("%d ports listed, %d install from MiniMart", len(doc.Ports), n)
+		if *portsOnly {
+			return
+		}
+	}
 
 	var repos []string
 	if *only != "" {

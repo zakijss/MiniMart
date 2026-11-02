@@ -16,7 +16,7 @@ VERSION  ?= dev
 GALLERY  ?= build/screens
 HOST     ?= root@miyoo
 
-.PHONY: help test vet fmt lint check build package screens catalog deploy clean
+.PHONY: help test vet fmt lint check build package screens catalog ports deploy clean
 
 help: ## list the targets
 	@awk -F':.*## ' '/^[a-z-]+:.*## /{printf "  %-8s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -51,6 +51,9 @@ screens: ## draw the app's screens into $(GALLERY)/
 
 catalog: ## rebuild the community apps catalogue and cmd/minimart/picks.go from GitHub
 	$(GO) run ./tools/catalog -picks cmd/minimart/picks.go
+
+ports: ## rebuild the ports list and cmd/minimart/ports_builtin.json from GitHub
+	$(GO) run ./tools/catalog -ports-only -ports-out build/catalog/ports.json -ports-builtin cmd/minimart/ports_builtin.json -keep-zips=false
 
 deploy: ## build and copy to $(HOST)
 	./scripts/deploy.sh $(HOST)

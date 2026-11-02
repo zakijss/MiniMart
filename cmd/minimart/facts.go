@@ -173,6 +173,8 @@ func factRows(a App, ver, verNote string, size int64, w int) []row {
 	if size > 0 {
 		add("Download", sizeText(size), false)
 	}
+	t, short := spaceText(downloadNeeds(size))
+	add("Space", t, short)
 	none := "None stated"
 	if a.Updates != "" {
 		add("Updates itself", updatesText(a), true)
@@ -250,6 +252,7 @@ func (s *store) confirmInstall(a App, update bool) bool {
 		repo = "github.com/" + a.Repo
 	}
 	rs = append(rs, kv("Repository", repo, ui.Text, 0, w)...)
+	rs = append(rs, spaceRows(downloadNeeds(a.Size), 6, w)...)
 	if a.noLicence() {
 		rs = append(rs, kv("Licence", noLicenceText, ui.Warn, 6, w)...)
 	} else {
