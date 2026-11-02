@@ -1,11 +1,12 @@
 name: Catalogue
 
-# Rebuilds the community apps catalogue from GitHub (tools/catalog) every
-# day, and on demand, and publishes it as community.json on the release
-# tagged "catalog". That release is a pre-release, so MiniMart's own
+# Rebuilds the community apps catalogue and the ports list from GitHub
+# (tools/catalog) every day, and on demand, and publishes them as
+# community.json and ports.json on the release tagged "catalog". That release is a pre-release, so MiniMart's own
 # vX.Y.Z releases stay the latest. MiniMart reads
 # https://github.com/zakijss/MiniMart/releases/download/catalog/community.json
-# and falls back to the list compiled into it (cmd/minimart/picks.go).
+# (and .../ports.json) and falls back to the lists compiled into it
+# (cmd/minimart/picks.go, cmd/minimart/ports_builtin.json).
 
 on:
   schedule:
@@ -39,8 +40,14 @@ jobs:
         run: |
           go run ./tools/catalog -out build/catalog/community.json -scan build/catalog/scan.json \
             -prev build/prev/community.json -prev-scan build/prev/scan.json -keep-zips=false -min 50
+      - name: Build the ports list
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: go run ./tools/catalog -ports-only -ports-out build/catalog/ports.json -keep-zips=false -min-ports 15
       - name: MiniMart reads every entry, and each passes its checks
-        run: STORE_CATALOG="$PWD/build/catalog/community.json" go test -count=1 -run 'TestCatalogFile' ./cmd/minimart
+        run: |
+          STORE_CATALOG="$PWD/build/catalog/community.json" go test -count=1 -run 'TestCatalogFile' ./cmd/minimart
+          STORE_PORTS="$PWD/build/catalog/ports.json" go test -count=1 -run 'TestBuiltinPorts' ./cmd/minimart
       - name: Publish on the "catalog" pre-release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -49,4 +56,4 @@ jobs:
             gh release create catalog --prerelease --latest=false --title "Community apps catalogue" \
               --notes "MiniMart's community apps catalogue, rebuilt every day by tools/catalog. This is not a release of MiniMart."
           fi
-          gh release upload catalog build/catalog/community.json build/catalog/scan.json --clobber
+          gh release upload catalog build/catalog/community.json build/catalog/scan.json build/catalog/ports.json --clobber

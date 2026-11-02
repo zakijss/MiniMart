@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/zakijss/minideck/cache"
 	"github.com/zakijss/minideck/ui"
@@ -86,6 +87,9 @@ func TestScreens(t *testing.T) {
 	os.MkdirAll(filepath.Join(sd, "Roms", "N64"), 0o755)
 	os.WriteFile(filepath.Join(sd, "Roms", "N64", "My game.z64"), make([]byte, 8<<20), 0o644)
 	shot("home", func(s *store) { s.home() })
+	saveNote([]update{{Kind: "MiniDeck app", Name: "Carrier", Available: "9.9", app: &App{Folder: "Carrier"}}}, time.Now().Add(-2*time.Hour))
+	shot("home-updates", func(s *store) { s.home() })
+	os.Remove(notePath())
 	shot("apps-1-warning", func(s *store) { s.warning(true) })
 	shot("apps-2-list", func(s *store) {
 		l := ui.List{}
@@ -134,6 +138,37 @@ func TestScreens(t *testing.T) {
 	shot("apps-6-confirm", func(s *store) { s.confirmInstall(pick("RomManager"), false) })
 	shot("apps-7-confirm-plain", func(s *store) { s.confirmInstall(pick("PocketFeeds"), false) })
 	shot("apps-8-detail-own", func(s *store) { s.appDetail(own[1]) })
+
+	// Ports, from the list compiled in (the published one is offline here)
+	ps, err := ParsePorts(builtinPorts, "MiyooMini Ports")
+	if err != nil {
+		t.Fatal(err)
+	}
+	portNamed := func(n string) Port {
+		for _, p := range ps {
+			if p.Name == n {
+				return p
+			}
+		}
+		t.Fatalf("no port %s", n)
+		return Port{}
+	}
+	ut := portNamed("Undertale") // installed, waiting for the user's data.win
+	recs := map[string]portRecord{ut.key(): {Name: ut.Name, Version: ut.Version, Shortcuts: shortcutsOf(ut)}}
+	savePortRecords(recs)
+	nf := filepath.Join(sd, "Roms/PORTS/Shortcuts", ut.Games[0].Shortcut+".notfound")
+	os.MkdirAll(filepath.Dir(nf), 0o755)
+	os.WriteFile(nf, []byte("x"), 0o644)
+	withSrc := func(f func(*store)) func(*store) {
+		return func(s *store) { s.src = defaultSources; f(s) }
+	}
+	shot("ports-1-list", withSrc(func(s *store) { s.ports() }))
+	shot("ports-2-free", withSrc(func(s *store) { s.portDetail(portNamed("SkiFree")) }))
+	shot("ports-3-owned-installed", withSrc(func(s *store) { s.portDetail(ut) }))
+	shot("ports-4-owned-new", withSrc(func(s *store) { s.portDetail(portNamed("Fallout")) }))
+	shot("ports-5-guide", withSrc(func(s *store) { s.portDetail(portNamed("Stardew Valley")) }))
+	shot("ports-6-app", withSrc(func(s *store) { s.portDetail(portNamed("PocketStream")) }))
+	shot("ports-7-confirm", withSrc(func(s *store) { s.installPort(portNamed("Captain Claw"), PortState{}) }))
 }
 
 // sampleReadme is a README with the parts the conversion handles.

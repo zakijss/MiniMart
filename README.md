@@ -23,7 +23,11 @@ Community apps are made by other people and aren't reviewed: the checksum proves
 
 The community list is rebuilt every day by `tools/catalog`, which finds Onion apps on GitHub, pins each release, and derives the facts from the app's own files and README; `tools/catalog/exclude.json` lists what it leaves out and why. When the list can't be downloaded, MiniMart shows the copy built into it.
 
-Some ports need a file from your own copy of a game. MiniMart never downloads game data: after installing such a port it looks on the card for a copy that matches a known-good dump, then in your own game files folder if you set one in Repositories, and otherwise lets you pick the file.
+**Ports** lists the [MiyooMini-Ports](https://github.com/Producdevity/MiyooMini-Ports) list. A port whose release is laid out for Onion's Ports list installs from here: `tools/catalog` pins its zip and SHA-256 every day (`ports.json` on the `catalog` release), and MiniMart unpacks only what goes in `Roms/PORTS`. Removing a port deletes the files MiniMart installed and keeps the ones you added. The rest of the list is a guide to where each port comes from; `tools/catalog/ports-exclude.json` names the ones left out and why.
+
+A port of a commercial game is only the engine. MiniMart never downloads game data: you copy the files from your own copy of the game into `Roms/PORTS/Games/<game>/`, and the game shows up in Onion's Ports list as soon as the file it needs is there (MiniMart runs the same check Onion does). Community apps that need a single file from a game work the same way: MiniMart looks on the card for a copy that matches a known-good dump, then in your own game files folder if you set one in Repositories, and otherwise lets you pick the file.
+
+**Updates**, at the top of the home screen, checks the repositories for newer versions of everything MiniMart installed and updates one item or all of them, each download checked against its pinned SHA-256. Themes, icon packs and homebrew games have no versions, so they aren't checked. Pages that install something show the free space on the card and how much the install needs.
 
 ## Install
 

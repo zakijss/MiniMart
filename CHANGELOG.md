@@ -6,6 +6,20 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-02
+
+### Added
+
+- Ports install from MiniMart. 25 of the 72 ports in the MiyooMini-Ports list have a release laid out for Onion's Ports list; `tools/catalog` pins each one (zip and SHA-256) and publishes `ports.json` with the community apps every day. MiniMart unpacks only `Roms/PORTS/{Games,Imgs,Shortcuts,Manuals}`, updates and removes what it installed, and leaves files you added (game data, saves) in place. Ports whose release is an Onion app open in Apps.
+- Ports of commercial games install the engine only. MiniMart runs Onion's own check for the game's data file, so the game appears in Onion's Ports list once your files are in `Roms/PORTS/Games/<game>/`, and says which file it is waiting for.
+- Updates on the home screen: lists every installed MiniDeck app, community app and port with a newer version (installed and available version, download size). A updates one; Y updates all of them after asking once, with a progress bar each and a list of what was and wasn't updated. MiniMart itself goes last. MiniMart also checks in the background when it starts, at most once a day, and the Updates row shows how many are waiting ("5 new") and when it last checked.
+- Free space on the card on the home screen, the Ports list, and every app, theme, game and port page, with the space an install needs; a port is refused before downloading when it won't fit.
+
+### Changed
+
+- The built-in "MiyooMini Ports" source reads MiniMart's `ports.json` (the upstream list plus pinned releases), with a copy built in for when it can't be reached. A saved on/off setting for the old address carries over.
+- Requires MiniDeck 1.0.1 (on the keyboard, B on an empty field goes back).
+
 ## [1.0.0] - 2026-11-02
 
 ### Added
@@ -16,5 +30,6 @@ All notable changes are listed here. The format follows
 - The community apps list is built by `tools/catalog` from GitHub and published every day on the `catalog` release; MiniMart falls back to the copy built into it.
 - Ports that need your own game file: MiniMart finds a matching copy on the card or in your own game files folder, or lets you pick one, and copies it into place. It never downloads game data.
 
-[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/zakijss/MiniMart/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/zakijss/MiniMart/releases/tag/v1.0.0
