@@ -12,7 +12,7 @@ All notable changes are listed here. The format follows
 
 - Ports install from MiniMart. 25 of the 72 ports in the MiyooMini-Ports list have a release laid out for Onion's Ports list; `tools/catalog` pins each one (zip and SHA-256) and publishes `ports.json` with the community apps every day. MiniMart unpacks only `Roms/PORTS/{Games,Imgs,Shortcuts,Manuals}`, updates and removes what it installed, and leaves files you added (game data, saves) in place. Ports whose release is an Onion app open in Apps.
 - Ports of commercial games install the engine only. MiniMart runs Onion's own check for the game's data file, so the game appears in Onion's Ports list once your files are in `Roms/PORTS/Games/<game>/`, and says which file it is waiting for.
-- Updates on the home screen: lists every installed MiniDeck app, community app and port with a newer version (installed and available version, download size). A updates one; Y updates all of them after asking once, with a progress bar each and a list of what was and wasn't updated. MiniMart itself goes last.
+- Updates on the home screen: lists every installed MiniDeck app, community app and port with a newer version (installed and available version, download size). A updates one; Y updates all of them after asking once, with a progress bar each and a list of what was and wasn't updated. MiniMart itself goes last. MiniMart also checks in the background when it starts, at most once a day, and the Updates row shows how many are waiting ("5 new") and when it last checked.
 - Free space on the card on the home screen, the Ports list, and every app, theme, game and port page, with the space an install needs; a port is refused before downloading when it won't fit.
 
 ### Changed
