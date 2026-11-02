@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/hero.jpg" alt="A Miyoo Mini Plus standing among game cartridges, browsing apps in MiniMart" width="100%"></p>
+<p align="center"><img src="docs/hero.jpg" alt="A smoked black Miyoo Mini Plus on a stand showing MiniMart's home screen, with a white one on a stand and a clear purple one lying on a desk" width="100%"></p>
 
 [![CI](https://github.com/zakijss/MiniMart/actions/workflows/ci.yml/badge.svg)](https://github.com/zakijss/MiniMart/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/zakijss/MiniMart)](https://github.com/zakijss/MiniMart/releases)
@@ -15,7 +15,7 @@ Themes, icon packs, apps and homebrew games for a Miyoo Mini Plus, every downloa
 - Lists sorted by name, newest, size or (apps) category, and an app's README on its page.
 
 
-<p align="center"><img src="docs/desk.jpg" alt="MiniMart running on a Miyoo Mini Plus lying on a desk" width="100%"></p>
+<p align="center"><img src="docs/desk.jpg" alt="Two Miyoo Mini Plus handhelds lying on a window sill among game cartridges, one browsing MiniMart and one running MiniTop" width="100%"></p>
 
 ## Using it
 
