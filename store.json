@@ -1,0 +1,16 @@
+{
+  "name": "MiniMart",
+  "folder": "MiniMart",
+  "desc": "Themes, icon packs, apps and homebrew games",
+  "repo": "zakijss/MiniMart",
+  "license": "MIT",
+  "version": "__VERSION__",
+  "zip": "https://github.com/zakijss/MiniMart/releases/download/v__VERSION__/minimart-__VERSION__.zip",
+  "sha256": "__SHA256__",
+  "size": __SIZE__,
+  "strip": "App/",
+  "released": "__RELEASED__",
+  "facts": [
+    "Checks every download against its checksum before installing."
+  ]
+}

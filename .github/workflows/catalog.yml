@@ -1,0 +1,52 @@
+name: Catalogue
+
+# Rebuilds the community apps catalogue from GitHub (tools/catalog) every
+# day, and on demand, and publishes it as community.json on the release
+# tagged "catalog". That release is a pre-release, so MiniMart's own
+# vX.Y.Z releases stay the latest. MiniMart reads
+# https://github.com/zakijss/MiniMart/releases/download/catalog/community.json
+# and falls back to the list compiled into it (cmd/minimart/picks.go).
+
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catalog
+  cancel-in-progress: false
+
+jobs:
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7.0.0
+        with:
+          go-version-file: go.mod
+      - name: The previous catalogue (its unchanged entries are reused)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p build/prev
+          gh release download catalog --pattern community.json --pattern scan.json --dir build/prev || echo "no previous catalogue"
+      - name: Build the catalogue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          go run ./tools/catalog -out build/catalog/community.json -scan build/catalog/scan.json \
+            -prev build/prev/community.json -prev-scan build/prev/scan.json -keep-zips=false -min 50
+      - name: MiniMart reads every entry, and each passes its checks
+        run: STORE_CATALOG="$PWD/build/catalog/community.json" go test -count=1 -run 'TestCatalogFile' ./cmd/minimart
+      - name: Publish on the "catalog" pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view catalog >/dev/null 2>&1; then
+            gh release create catalog --prerelease --latest=false --title "Community apps catalogue" \
+              --notes "MiniMart's community apps catalogue, rebuilt every day by tools/catalog. This is not a release of MiniMart."
+          fi
+          gh release upload catalog build/catalog/community.json build/catalog/scan.json --clobber
