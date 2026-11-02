@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/zakijss/minideck/cache"
 	"github.com/zakijss/minideck/ui"
@@ -86,6 +87,9 @@ func TestScreens(t *testing.T) {
 	os.MkdirAll(filepath.Join(sd, "Roms", "N64"), 0o755)
 	os.WriteFile(filepath.Join(sd, "Roms", "N64", "My game.z64"), make([]byte, 8<<20), 0o644)
 	shot("home", func(s *store) { s.home() })
+	saveNote([]update{{Kind: "MiniDeck app", Name: "Carrier", Available: "9.9", app: &App{Folder: "Carrier"}}}, time.Now().Add(-2*time.Hour))
+	shot("home-updates", func(s *store) { s.home() })
+	os.Remove(notePath())
 	shot("apps-1-warning", func(s *store) { s.warning(true) })
 	shot("apps-2-list", func(s *store) {
 		l := ui.List{}

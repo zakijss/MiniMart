@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/zakijss/minideck/cache"
 )
@@ -124,5 +125,78 @@ func TestSameVersion(t *testing.T) {
 	}
 	if sameVersion("1.0.0", "1.0.1") {
 		t.Error("different versions equal")
+	}
+}
+
+func TestUpdateNote(t *testing.T) {
+	sd := portCard(t)
+	now := time.Date(2026, 11, 2, 12, 0, 0, 0, time.UTC)
+	if it := updatesItem(loadNote(), now); it.Detail != "" || !strings.HasPrefix(it.Sub, "Check for updates") {
+		t.Fatalf("never checked: %+v", it)
+	}
+	inst := func(folder, v string) {
+		d := filepath.Join(sd, "App", folder)
+		os.MkdirAll(d, 0o755)
+		os.WriteFile(filepath.Join(d, "config.json"), []byte("{}"), 0o644)
+		os.WriteFile(filepath.Join(d, "version.txt"), []byte(v+"\n"), 0o644)
+	}
+	inst("MiniRack", "1.0.0")
+	inst("MiniTape", "1.0.0")
+	savePortRecords(map[string]portRecord{"a/g#G": {Version: "1"}})
+	ups := []update{
+		{Kind: "MiniDeck app", Name: "MiniRack", Available: "1.0.1", app: &App{Folder: "MiniRack"}},
+		{Kind: "MiniDeck app", Name: "MiniTape", Available: "1.0.1", app: &App{Folder: "MiniTape"}},
+		{Kind: "Port", Name: "G", Available: "2", port: &Port{Name: "G", Repo: "a/g"}},
+	}
+	if err := saveNote(ups, now.Add(-3*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if it := updatesItem(loadNote(), now); it.Detail != "3 new" || it.Sub != "3 updates · checked 3 h ago" {
+		t.Fatalf("three: %+v", it)
+	}
+	// MiniTape updated from its own page: the count drops without a check
+	inst("MiniTape", "1.0.1")
+	if it := updatesItem(loadNote(), now); it.Detail != "2 new" {
+		t.Fatalf("two: %+v", it)
+	}
+	inst("MiniRack", "v1.0.1")
+	savePortRecords(map[string]portRecord{"a/g#G": {Version: "2"}})
+	if it := updatesItem(loadNote(), now); it.Detail != "" || it.Sub != "Up to date · checked 3 h ago" {
+		t.Fatalf("none: %+v", it)
+	}
+}
+
+// The background check runs at most once per checkEvery, keeps what it
+// found, and keeps nothing when no repository answered.
+func TestCheckInBackground(t *testing.T) {
+	portCard(t)
+	srv := httptest.NewTLSServer(http.NotFoundHandler())
+	defer srv.Close()
+	f := &fetcher{http: srv.Client(), cache: cache.New(t.TempDir())}
+	s := &store{f: f, poke: make(chan struct{}, 1), src: []Source{{Name: "T", Type: "apps", URL: srv.URL + "/c.json", Enabled: true}}}
+	now := time.Now()
+	s.checkInBackground(now)
+	waitPoke := func() bool {
+		select {
+		case <-s.poke:
+			return true
+		case <-time.After(3 * time.Second):
+			return false
+		}
+	}
+	if waitPoke() || !loadNote().Checked.IsZero() {
+		t.Fatal("a check that reached nothing was kept")
+	}
+	// one that worked is kept, and the next start within a day doesn't check
+	saveNote(nil, now.Add(-time.Hour))
+	s.checkInBackground(now)
+	if waitPoke() {
+		t.Fatal("checked again within a day")
+	}
+	saveNote(nil, now.Add(-25*time.Hour))
+	s.src = nil // nothing to read: an empty, successful check
+	s.checkInBackground(now)
+	if !waitPoke() || now.Sub(loadNote().Checked) > time.Minute+time.Since(now) {
+		t.Fatal("a day-old check wasn't redone")
 	}
 }

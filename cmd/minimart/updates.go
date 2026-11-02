@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"image"
 	"strings"
+	"time"
 
 	"github.com/zakijss/minideck/tnet"
 	"github.com/zakijss/minideck/ui"
@@ -151,6 +152,9 @@ func (s *store) updates() {
 			list, errs = s.f.findUpdates(s.src)
 			return nil, nil
 		})
+		if len(list) > 0 || len(errs) == 0 {
+			saveNote(list, time.Now())
+		}
 	}
 	check()
 	l := ui.List{}

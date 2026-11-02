@@ -48,6 +48,7 @@ func main() {
 	s := &store{scr: scr, input: ui.Input(), f: &fetcher{http: tnet.Client(20 * time.Second), cache: c},
 		poke: make(chan struct{}, 1), thumbs: map[string]image.Image{}, loading: map[string]bool{}, sem: make(chan struct{}, 2),
 		src: LoadSources()}
+	s.checkInBackground(time.Now())
 	s.home()
 }
 
@@ -79,7 +80,7 @@ func (s *store) next() (ui.Event, bool) {
 // for every frame, so it shows the look in use.
 func homeItems() []ui.Item {
 	return []ui.Item{
-		{Label: "Updates", Sub: "Check for updates, and update everything at once", Icon: "check", Chevron: true},
+		updatesItem(loadNote(), time.Now()),
 		{Label: "Featured themes", Sub: "Picked by the Onion team", Icon: "star", Chevron: true},
 		{Label: "All themes", Sub: "Over 200 from the community", Icon: "list", Chevron: true},
 		{Label: "Icon packs", Sub: "New icons for the menus", Icon: "gear", Chevron: true},
@@ -97,7 +98,7 @@ func (s *store) home() {
 		l.Items = homeItems()
 		sc := s.scr
 		free, _ := spaceText(0)
-		top := sc.StaticFrame("MiniMart", "Themes, apps, ports and games · "+free,
+		top := sc.StaticFrame("MiniMart", free,
 			ui.Hint{Button: "A", Label: "Open"}, ui.AppearanceHint, ui.Hint{Button: "B", Label: "Exit"})
 		l.Draw(sc, image.Rect(20, top, ui.W-26, ui.H-58))
 		sc.Present()
