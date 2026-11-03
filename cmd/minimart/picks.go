@@ -827,7 +827,7 @@ func init() {
 		App{
 			Name:     "lgtm",
 			Folder:   "lgtm",
-			Desc:     "Approve Claude Code from the couch",
+			Desc:     "Approve a coding agent's requests from the couch",
 			Repo:     "pid1/lgtm",
 			License:  "BSD-3-Clause",
 			Category: "Reading",
