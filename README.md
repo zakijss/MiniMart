@@ -6,7 +6,7 @@
 
 # MiniMart
 
-Themes, icon packs, apps and homebrew games for a Miyoo Mini Plus, every download checked against its SHA-256 before it is installed. Part of [MiniDeck](https://github.com/zakijss/MiniDeck).
+Themes, icon packs, apps and homebrew games for a Miyoo Mini Plus. Apps and ports are checked against a pinned SHA-256 before they are installed, and games are too when their repository gives one. Part of [MiniDeck](https://github.com/zakijss/MiniDeck).
 
 - Themes and icon packs from [OnionUI/Themes](https://github.com/OnionUI/Themes).
 - Every MiniDeck app, and the community apps that install as an Onion app folder, each pinned to a release.

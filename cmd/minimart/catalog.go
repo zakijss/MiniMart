@@ -346,6 +346,21 @@ func (f *fetcher) Preview(it Item) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
+	return decodePreview(b)
+}
+
+// maxPreviewPixels caps a preview's size before it's decoded: the device
+// has about 100 MB of RAM and a small PNG can claim to be huge.
+const maxPreviewPixels = 2500 * 2500
+
+func decodePreview(b []byte) (image.Image, error) {
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Width <= 0 || cfg.Height <= 0 || int64(cfg.Width)*int64(cfg.Height) > maxPreviewPixels { // int64: int is 32 bits on the device
+		return nil, fmt.Errorf("preview too large (%dx%d)", cfg.Width, cfg.Height)
+	}
 	img, _, err := image.Decode(bytes.NewReader(b))
 	return img, err
 }
@@ -658,6 +673,7 @@ func Unzip(zipPath, dir string) error {
 	}
 	defer r.Close()
 	root, _ := filepath.Abs(dir)
+	left := int64(256 << 20) // for the whole zip, so a zip bomb can't fill the card
 	for _, zf := range r.File {
 		p := filepath.Join(root, zf.Name)
 		if p != root && !strings.HasPrefix(p, root+string(os.PathSeparator)) {
@@ -680,10 +696,13 @@ func Unzip(zipPath, dir string) error {
 			in.Close()
 			return err
 		}
-		_, err = io.Copy(out, io.LimitReader(in, 256<<20))
+		n, err := io.Copy(out, io.LimitReader(in, left+1))
 		in.Close()
 		if cerr := out.Close(); err == nil {
 			err = cerr
+		}
+		if left -= n; err == nil && left < 0 {
+			err = errors.New("the zip is too big to unpack")
 		}
 		if err != nil {
 			return err

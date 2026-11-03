@@ -6,6 +6,13 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-11-03
+
+### Security
+
+- Theme and icon pack previews larger than 2500x2500 pixels are refused before they are decoded, so a hostile picture can't exhaust the device's memory.
+- An icon pack zip may unpack to at most 256 MB in all (it was 256 MB per file, cut short without an error).
+
 ## [1.1.0] - 2026-11-02
 
 ### Added
@@ -30,6 +37,7 @@ All notable changes are listed here. The format follows
 - The community apps list is built by `tools/catalog` from GitHub and published every day on the `catalog` release; MiniMart falls back to the copy built into it.
 - Ports that need your own game file: MiniMart finds a matching copy on the card or in your own game files folder, or lets you pick one, and copies it into place. It never downloads game data.
 
-[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/zakijss/MiniMart/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/zakijss/MiniMart/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/zakijss/MiniMart/releases/tag/v1.0.0
