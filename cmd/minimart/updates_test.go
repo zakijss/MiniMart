@@ -59,7 +59,14 @@ func TestFindAndApplyUpdates(t *testing.T) {
 	}))
 	defer srv.Close()
 	srvURL = srv.URL
-	f := &fetcher{http: srv.Client(), cache: cache.New(t.TempDir())}
+	// cached() refreshes in a goroutine that may still write here after the test, so the folder
+	// isn't a t.TempDir (whose cleanup fails on a late write); a leftover file is harmless.
+	cacheDir, err := os.MkdirTemp("", "minimart-cache")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(cacheDir) })
+	f := &fetcher{http: srv.Client(), cache: cache.New(cacheDir)}
 	src := []Source{{Name: "Test", Type: "apps", URL: srv.URL + "/catalog.json", Enabled: true}, {Name: "P", Type: "ports", URL: srv.URL + "/ports.json", Enabled: true}}
 
 	inst := func(folder, version string) {
