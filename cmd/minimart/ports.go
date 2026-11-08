@@ -552,7 +552,7 @@ func (f *fetcher) DownloadPort(p Port, progress func(done, total int64)) (*pendi
 		return nil, err
 	}
 	if free := freeSpace(sdcard()); free >= 0 && free < portNeeds(p) {
-		return nil, fmt.Errorf("not enough space on the card: it needs about %s, %s free", humanSize(portNeeds(p)), humanSize(free))
+		return nil, fmt.Errorf("not enough space on the card (it needs about %s, %s free): make room first (MiniTop › Storage)", humanSize(portNeeds(p)), humanSize(free))
 	}
 	if err := os.MkdirAll(stagingDir(), 0755); err != nil {
 		return nil, err
@@ -580,7 +580,7 @@ func (f *fetcher) DownloadPort(p Port, progress func(done, total int64)) (*pendi
 	}
 	if free := freeSpace(portsDirOrCard()); free >= 0 && free < total+total/20+(2<<20) {
 		zr.Close()
-		return fail(fmt.Errorf("not enough space on the card to unpack it: it needs %s, %s free", humanSize(total), humanSize(free)))
+		return fail(fmt.Errorf("not enough space on the card to unpack it (it needs %s, %s free): make room first (MiniTop › Storage)", humanSize(total), humanSize(free)))
 	}
 	pp := &pendingPort{p: p, tmp: tmp, zr: zr, es: es}
 	ours := map[string]bool{}

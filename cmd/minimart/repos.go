@@ -29,7 +29,7 @@ func (s *store) repos() {
 		}
 		l.Items = append(items, gameFilesRow())
 		sc := s.scr
-		top := sc.StaticFrame("Repositories", "Where the store looks for themes and apps",
+		top := sc.StaticFrame("Repositories", "Where the store finds themes, apps and games",
 			ui.Hint{Button: "A", Label: "On / off"}, ui.Hint{Button: "Y", Label: "Add"}, ui.Hint{Button: "X", Label: "Remove"}, ui.Hint{Button: "B", Label: "Back"})
 		l.Draw(sc, image.Rect(20, top, ui.W-26, ui.H-58))
 		sc.Present()
@@ -54,7 +54,7 @@ func (s *store) repos() {
 			r := s.src[l.Sel]
 			if r.Builtin {
 				s.scr.Notice(s.input, r.Name, "Built-in repositories can be turned off (A), not removed.")
-			} else if s.scr.Confirm(s.input, "Remove "+r.Name+"?", "Its themes and apps stop showing in the store. Anything installed stays.", "Remove") {
+			} else if s.scr.Confirm(s.input, "Remove "+r.Name+"?", "What it lists stops showing in the store. Anything installed stays.", "Remove") {
 				s.src = append(s.src[:l.Sel], s.src[l.Sel+1:]...)
 				s.saveSources()
 				if l.Sel >= len(s.src) {
@@ -114,7 +114,7 @@ func (s *store) addRepo() {
 		return
 	}
 	src.Name = name
-	warn := "Its themes and apps appear in the store."
+	warn := "Its themes and icon packs appear in the store."
 	if typ == "apps" {
 		warn = "Apps from it are installed only if their checksum matches. Add only catalogues you trust: apps run with full access to the device."
 	}

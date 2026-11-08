@@ -728,7 +728,7 @@ func romsFromZip(zipPath string, sys system, title string) ([]staged, error) {
 		return nil, fmt.Errorf("the zip's game is too big to unpack (%d MB)", total>>20)
 	}
 	if free := freeSpace(filepath.Dir(zipPath)); free >= 0 && uint64(free) < total {
-		return nil, fmt.Errorf("not enough space on the card to unpack the game (%d MB free)", free>>20)
+		return nil, fmt.Errorf("not enough space on the card to unpack the game (%d MB free): make room first (MiniTop › Storage)", free>>20)
 	}
 	slices.SortFunc(files, func(a, b *zip.File) int { return strings.Compare(a.Name, b.Name) })
 

@@ -618,7 +618,7 @@ func (f *fetcher) fetchPart(u, part string, limit int64, progress func(done, tot
 		return fmt.Errorf("the download is too big (%d MB)", resp.ContentLength>>20)
 	}
 	if free := freeSpace(filepath.Dir(part)); free >= 0 && resp.ContentLength > 0 && free < resp.ContentLength*3 {
-		return fmt.Errorf("not enough space on the card (%d MB free)", free>>20)
+		return fmt.Errorf("not enough space on the card (%d MB free): make room first (MiniTop › Storage)", free>>20)
 	}
 	out, err := os.Create(part)
 	if err != nil {

@@ -320,7 +320,7 @@ func copyGameFile(src string, nf *NeedsFile, progress func(done, total int64)) e
 		return err
 	}
 	if free := freeSpace(filepath.Dir(dst)); free >= 0 && free < fi.Size() {
-		return fmt.Errorf("not enough space on the card (%d MB free)", free>>20)
+		return fmt.Errorf("not enough space on the card (%d MB free): make room first (MiniTop › Storage)", free>>20)
 	}
 	tmp := dst + ".store-new"
 	out, err := os.Create(tmp)

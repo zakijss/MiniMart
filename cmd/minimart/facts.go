@@ -53,7 +53,7 @@ var warningPoints = []string{
 const diligence = "MiniDeck doesn't review community apps. Read its repository and decide whether you trust it before installing."
 
 // reminder is the line under the Apps list, in small capitals.
-const reminder = "NOT REVIEWED BY MIYOONET: READ EACH APP'S REPOSITORY FIRST"
+const reminder = "NOT REVIEWED BY MINIDECK: READ EACH APP'S REPOSITORY FIRST"
 
 // warning shows the due-diligence text. With ack set it asks the user to
 // acknowledge it (A) and remembers that; it reports whether they did.

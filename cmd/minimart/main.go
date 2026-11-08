@@ -159,7 +159,7 @@ func (s *store) load(title string, fn func() ([]Item, error)) ([]Item, error) {
 func (s *store) themes(featured bool) {
 	title := "All themes"
 	if featured {
-		title = "Featured"
+		title = "Featured themes"
 	}
 	all, err := s.load(title, func() ([]Item, error) { return s.f.Themes(s.src) })
 	if err != nil {
@@ -172,6 +172,10 @@ func (s *store) themes(featured bool) {
 			list = append(list, it)
 		}
 	}
+	if len(list) == 0 {
+		s.scr.Notice(s.input, title, "No themes: turn on a theme repository in Repositories.")
+		return
+	}
 	s.browse(title, "themes", list)
 }
 
@@ -179,6 +183,10 @@ func (s *store) iconPacks() {
 	list, err := s.load("Icon packs", func() ([]Item, error) { return s.f.IconPacks(s.src) })
 	if err != nil {
 		s.scr.Notice(s.input, "MiniMart", "Couldn't load the icon packs: "+tnet.Explain(err).Error())
+		return
+	}
+	if len(list) == 0 {
+		s.scr.Notice(s.input, "Icon packs", "No icon packs: turn on a theme repository in Repositories.")
 		return
 	}
 	s.browse("Icon packs", "icons", list)
