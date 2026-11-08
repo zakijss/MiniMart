@@ -6,9 +6,19 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-08
+
 ### Added
 
 - The community list can take an app built to replace one of Onion's own apps: `hints.json` gives it a folder of its own (`folder`), so it installs beside the original instead of over it, with any facts for its page (`facts`). First use: ksielick's Battery Monitor V2, installed as `App/BatteryMonitorV2`.
+
+### Changed
+
+- Not-enough-space errors say to make room in MiniTop › Storage.
+- An empty theme or icon pack list says to turn on a theme repository.
+- The store's reminder names MiniDeck instead of MiyooNet.
+- The Repositories texts mention games and icon packs.
+- Grey and red small text is easier to read (MiniDeck 1.0.3).
 
 ## [1.2.0] - 2026-11-08
 
@@ -47,7 +57,8 @@ All notable changes are listed here. The format follows
 - The community apps list is built by `tools/catalog` from GitHub and published every day on the `catalog` release; MiniMart falls back to the copy built into it.
 - Ports that need your own game file: MiniMart finds a matching copy on the card or in your own game files folder, or lets you pick one, and copies it into place. It never downloads game data.
 
-[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/zakijss/MiniMart/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/zakijss/MiniMart/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/zakijss/MiniMart/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/zakijss/MiniMart/compare/v1.0.0...v1.1.0
