@@ -6,6 +6,10 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- The Silky Remix SUPER GAME BOY++ theme and its icon pack are listed, from a built-in repository, `zakijss/SuperGameBoy`, laid out like OnionUI/Themes. It can be turned off in Repositories like the others.
+
 ## [1.1.1] - 2026-11-03
 
 ### Security

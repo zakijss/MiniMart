@@ -56,6 +56,7 @@ const minideckCatalog = "https://github.com/zakijss/MiniDeck/releases/latest/dow
 var defaultSources = []Source{
 	{Name: "MiniDeck", Type: "apps", URL: minideckCatalog, Enabled: true, Builtin: true},
 	{Name: "OnionUI Themes", Type: "themes", URL: "https://raw.githubusercontent.com/OnionUI/Themes/main/", Enabled: true, Builtin: true},
+	{Name: "Super Game Boy++", Type: "themes", URL: "https://raw.githubusercontent.com/zakijss/SuperGameBoy/main/", Enabled: true, Builtin: true},
 	{Name: "Community apps", Type: "apps", URL: communityCatalog, Enabled: true, Builtin: true},
 	{Name: "MiyooMini Ports", Type: "ports", URL: portsCatalog, Enabled: true, Builtin: true},
 	{Name: "Homebrew Hub", Type: "games", URL: "https://hh3.gbdev.io/api/", Enabled: true, Builtin: true},

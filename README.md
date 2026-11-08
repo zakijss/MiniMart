@@ -8,7 +8,7 @@
 
 Themes, icon packs, apps and homebrew games for a Miyoo Mini Plus. Apps and ports are checked against a pinned SHA-256 before they are installed, and games are too when their repository gives one. Part of [MiniDeck](https://github.com/zakijss/MiniDeck).
 
-- Themes and icon packs from [OnionUI/Themes](https://github.com/OnionUI/Themes).
+- Themes and icon packs from [OnionUI/Themes](https://github.com/OnionUI/Themes), and the [Silky Remix SUPER GAME BOY++](https://github.com/zakijss/SuperGameBoy) theme and its icon pack.
 - Every MiniDeck app, and the community apps that install as an Onion app folder, each pinned to a release.
 - Homebrew games from [Homebrew Hub](https://hh3.gbdev.io) whose licence allows downloading.
 - Your own repositories and catalogues alongside the built-in ones.
