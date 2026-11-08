@@ -6,6 +6,10 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- The community list can take an app built to replace one of Onion's own apps: `hints.json` gives it a folder of its own (`folder`), so it installs beside the original instead of over it, with any facts for its page (`facts`). First use: ksielick's Battery Monitor V2, installed as `App/BatteryMonitorV2`.
+
 ## [1.2.0] - 2026-11-08
 
 ### Added

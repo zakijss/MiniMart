@@ -1,5 +1,5 @@
 {
-  "_about": "Store settings the generator can't read from a repository: the file an app keeps its sign-in or key in (the store keeps it encrypted on the card) and whether the app may use MiyooScale's proxy. Keyed by owner/repo#Folder.",
+  "_about": "Store settings the generator can't read from a repository: the file an app keeps its sign-in or key in (the store keeps it encrypted on the card) whether the app may use MiyooScale's proxy, a folder to install a replacement for an Onion app under, beside the original (keyed by the folder in its zip), and facts for its page. Keyed by owner/repo#Folder.",
   "snyderman3000/cablebox-onionOS#Cablebox": {"secure": "data/config.json"},
   "snyderman3000/Carrier-onionOS#Carrier": {"secure": "data/config.json"},
   "snyderman3000/Cyberspace.miyoo#Cyberspace.miyoo": {"secure": "data/session.json"},
@@ -8,6 +8,7 @@
   "Powse/minichieves#Minichieves": {"secure": "data.db"},
   "snyderman3000/mixtape#Mixtape": {"secure": "data/config.json"},
   "S3ggie/MiyooFin#MiyooFin": {"secure": "session.txt", "tailnet": true},
+  "ksielick/batterymonitor-miyoo#BatteryMonitorUI": {"folder": "BatteryMonitorV2", "facts": ["From its own menu (Select) it can write the battery capacity, the hardware shutdown voltage and the capacity-learning switch into the power chip's registers; it does nothing to them unless chosen there."]},
   "ksielick/portmanager-miyoo#PortManager": {"secure": "tokens.txt"},
   "snyderman3000/rewind#Rewind": {"secure": "data/config.json"}
 }

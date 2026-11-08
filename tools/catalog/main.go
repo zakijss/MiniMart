@@ -94,6 +94,14 @@ type Scan struct {
 type hint struct {
 	Secure  string `json:"secure"`
 	Tailnet bool   `json:"tailnet"`
+	// Folder: install the zip's folder under this name instead. For an app
+	// built to replace an Onion app, whose zip uses that app's folder: it
+	// goes in beside the original rather than over it. Keyed by the zip's
+	// folder ("owner/repo#BatteryMonitorUI").
+	Folder string `json:"folder"`
+	// Facts: statements about the app the generator can't find in its
+	// files, added to its page (what its own menus can change, say).
+	Facts []string `json:"facts"`
 }
 
 type gen struct {

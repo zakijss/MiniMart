@@ -287,3 +287,32 @@ func TestSeedRepos(t *testing.T) {
 		t.Fatalf("%v %v", repos, wrapped)
 	}
 }
+
+// An app built to replace an Onion app, its zip using that app's folder, is
+// left out unless hints.json gives it a folder of its own; then it unpacks
+// there, beside the original.
+func TestFolderHint(t *testing.T) {
+	info := inspectZip(zipOf(t, map[string]string{
+		"BatteryMonitorUI/config.json": cfg,
+		"BatteryMonitorUI/launch.sh":   "#!/bin/sh\ncd $(dirname \"$0\")\n./bm\n",
+	}), "")
+	if len(info.Apps) != 1 {
+		t.Fatalf("%+v", info.Apps)
+	}
+	g := &gen{hints: map[string]hint{}, wrapped: map[string]string{}}
+	p := pin{url: "https://example.com/bm.zip", info: info}
+	if _, err := g.entry("o/bm", &repoInfo{}, p, info.Apps[0], ""); err == nil {
+		t.Fatal("an app over Onion's Battery Monitor was let in")
+	}
+	g.hints["o/bm#BatteryMonitorUI"] = hint{Folder: "BatteryMonitorV2", Facts: []string{"It can write the power chip's settings."}}
+	a, err := g.entry("o/bm", &repoInfo{}, p, info.Apps[0], "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.Folder != "BatteryMonitorV2" || a.Strip != "BatteryMonitorUI/" || !a.Wrap {
+		t.Fatalf("folder %q strip %q wrap %v", a.Folder, a.Strip, a.Wrap)
+	}
+	if !strings.Contains(strings.Join(a.Facts, " "), "power chip") {
+		t.Errorf("hinted fact missing: %v", a.Facts)
+	}
+}

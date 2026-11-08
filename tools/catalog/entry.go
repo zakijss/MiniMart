@@ -34,6 +34,12 @@ func (g *gen) entry(repo string, info *repoInfo, p pin, za zipApp, readme string
 	if folder == "" || !folderRe.MatchString(folder) {
 		return App{}, fmt.Errorf("no usable folder name for the app in %s", za.Dir)
 	}
+	var beside []string
+	if h := g.hints[repo+"#"+folder]; h.Folder != "" && !za.Wrap && folderRe.MatchString(h.Folder) && !reserved(h.Folder) {
+		beside = append(beside, fmt.Sprintf("Its zip unpacks into App/%s; the store installs it as App/%s, beside that app, not over it.", folder, h.Folder))
+		beside = append(beside, h.Facts...)
+		za.Strip, za.Wrap, folder = za.Strip+folder+"/", true, h.Folder
+	}
 	if reserved(folder) {
 		return App{}, fmt.Errorf("folder App/%s belongs to an Onion or MiniDeck app", folder)
 	}
@@ -64,6 +70,7 @@ func (g *gen) entry(repo string, info *repoInfo, p pin, za zipApp, readme string
 		facts = append(facts, "The repository is archived on GitHub (read-only).")
 	}
 	facts = append(facts, licFacts...)
+	facts = append(facts, beside...)
 	if n := len(p.info.Apps); n > 1 {
 		var names []string
 		for _, o := range p.info.Apps {
