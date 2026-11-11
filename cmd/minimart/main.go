@@ -131,9 +131,27 @@ func (s *store) home() {
 				s.scr.Appearance(s.input)
 			}
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
+}
+
+// handle moves l's selection. L2 and R2 jump to the first and last row,
+// which List.Handle doesn't do.
+func handle(l *ui.List, ev ui.Event) {
+	switch {
+	case ev.Button == ui.L2 && len(l.Items) > 0:
+		l.Sel = 0
+	case ev.Button == ui.R2 && len(l.Items) > 0:
+		l.Sel = len(l.Items) - 1
+	default:
+		l.Handle(ev)
+	}
+}
+
+// retry says a list couldn't be loaded and asks whether to try again.
+func (s *store) retry(title, msg string) bool {
+	return s.scr.Confirm(s.input, title, msg, "Try again")
 }
 
 // load shows a spinner while fn runs.
@@ -162,9 +180,11 @@ func (s *store) themes(featured bool) {
 		title = "Featured themes"
 	}
 	all, err := s.load(title, func() ([]Item, error) { return s.f.Themes(s.src) })
-	if err != nil {
-		s.scr.Notice(s.input, "MiniMart", "Couldn't load the themes: "+tnet.Explain(err).Error())
-		return
+	for err != nil {
+		if !s.retry(title, "Couldn't load the themes: "+tnet.Explain(err).Error()) {
+			return
+		}
+		all, err = s.load(title, func() ([]Item, error) { return s.f.Themes(s.src) })
 	}
 	var list []Item
 	for _, it := range all {
@@ -181,9 +201,11 @@ func (s *store) themes(featured bool) {
 
 func (s *store) iconPacks() {
 	list, err := s.load("Icon packs", func() ([]Item, error) { return s.f.IconPacks(s.src) })
-	if err != nil {
-		s.scr.Notice(s.input, "MiniMart", "Couldn't load the icon packs: "+tnet.Explain(err).Error())
-		return
+	for err != nil {
+		if !s.retry("Icon packs", "Couldn't load the icon packs: "+tnet.Explain(err).Error()) {
+			return
+		}
+		list, err = s.load("Icon packs", func() ([]Item, error) { return s.f.IconPacks(s.src) })
 	}
 	if len(list) == 0 {
 		s.scr.Notice(s.input, "Icon packs", "No icon packs: turn on a theme repository in Repositories.")
@@ -276,7 +298,7 @@ func (s *store) browse(title, key string, list []Item) {
 				l = ui.List{Items: items}
 			}
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
 }
@@ -455,21 +477,31 @@ func (s *store) progress(title, name string, work func(func(int64, int64)) error
 // appList lists the apps of every catalogue: MiniDeck's own first, then
 // the rest by name. The first time it has community apps to show, it shows
 // the due-diligence warning and opens only once the user acknowledges it;
-// Y shows the warning again.
+// Y shows the warning again; START downloads the catalogues again.
 func (s *store) appList() {
-	var list []App
-	var errs []error
-	s.load("Apps", func() ([]Item, error) {
-		list, errs = s.f.Apps(s.src)
-		return nil, nil
-	})
-	if len(list) == 0 {
-		msg := "No apps: turn on an app catalogue in Repositories."
-		if len(errs) > 0 {
-			msg = "Couldn't load the catalogues: " + tnet.Explain(errs[0]).Error()
+	// fresh: download the catalogues now instead of showing the copies on
+	// the card first
+	var stale error // why the last START couldn't download a catalogue
+	get := func(fresh bool) (list []App, errs []error) {
+		s.load("Apps", func() ([]Item, error) {
+			if fresh {
+				stale = s.f.refresh(s.src)
+			}
+			list, errs = s.f.Apps(s.src)
+			return nil, nil
+		})
+		return list, errs
+	}
+	list, errs := get(false)
+	for len(list) == 0 {
+		if len(errs) == 0 {
+			s.scr.Notice(s.input, "Apps", "No apps: turn on an app catalogue in Repositories.")
+			return
 		}
-		s.scr.Notice(s.input, "Apps", msg)
-		return
+		if !s.retry("Apps", "Couldn't load the catalogues: "+tnet.Explain(errs[0]).Error()) {
+			return
+		}
+		list, errs = get(true)
 	}
 	community := false
 	for _, a := range list {
@@ -478,15 +510,20 @@ func (s *store) appList() {
 	if community && !warningSeen() && !s.warning(true) {
 		return
 	}
-	note := sourcesNote(errs)
-	// What is installed is read from the card once, and again for an app
-	// whose details were open, not on every redraw.
-	state := map[string]string{}
-	counts := map[string]int{}
-	for _, a := range list {
-		state[a.Folder] = installedState(a)
-		counts[categoryOf(a)]++
+	var note string
+	var state map[string]string
+	var counts map[string]int
+	index := func() {
+		note = sourcesNote(errs)
+		// What is installed is read from the card once, and again for an
+		// app whose details were open, not on every redraw.
+		state, counts = map[string]string{}, map[string]int{}
+		for _, a := range list {
+			state[a.Folder] = installedState(a)
+			counts[categoryOf(a)]++
+		}
 	}
+	index()
 	o := listOrder("apps", appOrders)
 	cat := ""
 	var shown []App
@@ -528,8 +565,34 @@ func (s *store) appList() {
 			if community {
 				s.warning(false)
 			}
+		case ui.Start:
+			nl, ne := get(true)
+			if len(nl) == 0 {
+				msg := "No apps: turn on an app catalogue in Repositories."
+				if len(ne) > 0 {
+					msg = "Couldn't load the catalogues: " + tnet.Explain(ne[0]).Error() + ". The list stays as it was."
+				}
+				s.scr.Notice(s.input, "Apps", msg)
+				break
+			}
+			sel := ""
+			if l.Sel < len(shown) {
+				sel = shown[l.Sel].Folder
+			}
+			list, errs = nl, ne
+			index()
+			arrange()
+			l.Sel = 0
+			for i, a := range shown {
+				if a.Folder == sel {
+					l.Sel = i
+				}
+			}
+			if stale != nil {
+				s.scr.Notice(s.input, "Apps", "Couldn't download the catalogues, so the copy on the card is shown: "+tnet.Explain(stale).Error())
+			}
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
 }
@@ -557,9 +620,9 @@ func (s *store) drawAppList(l *ui.List, list []App, state map[string]string, sub
 		items[i] = ui.Item{Label: a.Name, Sub: line, Detail: state[a.Folder], Chevron: true}
 	}
 	l.Items = items
-	hints := []ui.Hint{{Button: "A", Label: "Details"}, {Button: "X", Label: "Sort"}}
+	hints := []ui.Hint{{Button: "A", Label: "Details"}, {Button: "X", Label: "Sort"}, {Button: "START", Label: "Refresh"}}
 	if community {
-		hints = append(hints, ui.Hint{Button: "Y", Label: "About apps"})
+		hints = append(hints, ui.Hint{Button: "Y", Label: "About"})
 	}
 	sc := s.scr
 	top := sc.StaticFrame("Apps", sub, append(hints, ui.Hint{Button: "B", Label: "Back"})...)

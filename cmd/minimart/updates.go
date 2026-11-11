@@ -111,8 +111,9 @@ func (f *fetcher) findUpdates(ss []Source) ([]update, []error) {
 // refresh reads the enabled app catalogues and ports lists again now,
 // rather than the copies cached on the card (which the store otherwise
 // shows first and refreshes behind the scenes). One that can't be read
-// keeps its cached copy.
-func (f *fetcher) refresh(ss []Source) {
+// keeps its cached copy; the first such error is returned.
+func (f *fetcher) refresh(ss []Source) error {
+	var first error
 	for _, s := range ss {
 		if !s.Enabled || s.Type != "apps" && s.Type != "ports" {
 			continue
@@ -121,10 +122,16 @@ func (f *fetcher) refresh(ss []Source) {
 		if u == builtinCatalog {
 			u = communityCatalog
 		}
-		if b, err := f.get(u); err == nil {
-			f.cache.Put(u, b)
+		b, err := f.get(u)
+		if err != nil {
+			if first == nil {
+				first = sourceError{s.Name, err}
+			}
+			continue
 		}
+		f.cache.Put(u, b)
 	}
+	return first
 }
 
 // apply installs one update. It returns the version installed.
@@ -164,13 +171,15 @@ func (s *store) updates() {
 		if len(errs) > 0 {
 			note = " · couldn't check " + fmt.Sprint(len(errs))
 		}
-		if len(list) == 0 {
-			msg := "Everything installed from MiniMart is up to date."
-			if len(errs) > 0 {
-				msg += " Some repositories couldn't be checked: " + tnet.Explain(errs[0]).Error()
+		if len(list) == 0 && len(errs) > 0 {
+			if s.retry("Updates", "No updates found, but some repositories couldn't be checked: "+tnet.Explain(errs[0]).Error()) {
+				check()
+				continue
 			}
-			msg += " Themes, icon packs and homebrew games have no versions, so they aren't checked."
-			s.scr.Notice(s.input, "Updates", msg)
+			return
+		}
+		if len(list) == 0 {
+			s.scr.Notice(s.input, "Updates", "Everything installed from MiniMart is up to date. Themes, icon packs and homebrew games have no versions, so they aren't checked.")
 			return
 		}
 		items := make([]ui.Item, len(list))
@@ -202,7 +211,7 @@ func (s *store) updates() {
 				check()
 			}
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
 }

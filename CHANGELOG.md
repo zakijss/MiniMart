@@ -6,6 +6,18 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **START** on Apps and Ports downloads the catalogues again now, instead of showing the copy on the card first, and keeps the selected row. If a download fails, it says so.
+- **L2**/**R2** jump to the first or last row of every list.
+- When themes, icon packs, apps, games or ports can't be loaded, **A** tries again.
+
+### Changed
+
+- Updates no longer says everything is up to date when some repositories couldn't be checked: it says so and offers to try again.
+- The Apps footer says **Y** About, to make room for **START** Refresh.
+- Built with Go 1.27.4, with updated dependencies.
+
 ## [1.3.0] - 2026-11-08
 
 ### Added

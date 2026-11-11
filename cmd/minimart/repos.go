@@ -64,7 +64,7 @@ func (s *store) repos() {
 		case ui.Y:
 			s.addRepo()
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
 }

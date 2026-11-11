@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/zakijss/minideck/cache"
+	"github.com/zakijss/minideck/ui"
 )
 
 func TestItemNames(t *testing.T) {
@@ -366,5 +367,26 @@ func TestBrowseRowAndAppState(t *testing.T) {
 	os.WriteFile(filepath.Join(a.dir(), ".store-version"), []byte("1.2\n"), 0644)
 	if installedState(a) != "v1.2" {
 		t.Error(installedState(a))
+	}
+}
+
+func TestHandleJumps(t *testing.T) {
+	l := ui.List{Items: make([]ui.Item, 10), Sel: 4}
+	handle(&l, ui.Event{Button: ui.R2, Pressed: true})
+	if l.Sel != 9 {
+		t.Errorf("R2: Sel %d, want 9", l.Sel)
+	}
+	handle(&l, ui.Event{Button: ui.L2, Pressed: true})
+	if l.Sel != 0 {
+		t.Errorf("L2: Sel %d, want 0", l.Sel)
+	}
+	handle(&l, ui.Event{Button: ui.Right, Pressed: true})
+	if l.Sel != 6 {
+		t.Errorf("Right: Sel %d, want 6", l.Sel)
+	}
+	empty := ui.List{}
+	handle(&empty, ui.Event{Button: ui.R2, Pressed: true})
+	if empty.Sel != 0 {
+		t.Errorf("R2 on an empty list: Sel %d", empty.Sel)
 	}
 }

@@ -23,13 +23,15 @@ func (s *store) homebrew() {
 		})
 	}
 	reload()
-	if len(list) == 0 {
-		msg := "No games: turn on Homebrew Hub in Repositories."
-		if len(errs) > 0 {
-			msg = "Couldn't load the games: " + tnet.Explain(errs[0]).Error()
+	for len(list) == 0 {
+		if len(errs) == 0 {
+			s.scr.Notice(s.input, "Homebrew games", "No games: turn on Homebrew Hub in Repositories.")
+			return
 		}
-		s.scr.Notice(s.input, "Homebrew games", msg)
-		return
+		if !s.retry("Homebrew games", "Couldn't load the games: "+tnet.Explain(errs[0]).Error()) {
+			return
+		}
+		reload()
 	}
 	l := ui.List{}
 	for {
@@ -83,7 +85,7 @@ func (s *store) homebrew() {
 				reload()
 			}
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
 }
@@ -144,7 +146,7 @@ func (s *store) gameList(sys system, list []Game) {
 				l.Sel = 0
 			}
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
 }

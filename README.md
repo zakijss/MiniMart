@@ -13,6 +13,7 @@ Themes, icon packs, apps and homebrew games for a Miyoo Mini Plus. Apps and port
 - Homebrew games from [Homebrew Hub](https://hh3.gbdev.io) whose licence allows downloading.
 - Your own repositories and catalogues alongside the built-in ones.
 - Lists sorted by name, newest, size or (apps) category, and an app's README on its page.
+- **START** on Apps and Ports downloads the lists again, and **L2**/**R2** jump to the top or bottom of any list. A list that can't be downloaded offers to try again.
 
 
 <p align="center"><img src="docs/desk.jpg" alt="Two Miyoo Mini Plus handhelds lying on a window sill among game cartridges, one browsing MiniMart and one running MiniTop" width="100%"></p>

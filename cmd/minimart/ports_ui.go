@@ -12,19 +12,29 @@ import (
 // ports lists the ports: those with a pinned release install from here,
 // app releases open in Apps, the rest are a guide to where to get them.
 func (s *store) ports() {
-	var list []Port
-	var err error
-	s.load("Ports", func() ([]Item, error) {
-		list, err = s.f.Ports(s.src)
-		return nil, nil
-	})
-	if len(list) == 0 {
-		msg := "Turn on the ports list in Repositories."
-		if err != nil {
-			msg = "Couldn't load the ports list: " + tnet.Explain(err).Error()
+	// fresh: download the list now instead of showing the copy on the
+	// card first
+	var stale error // why the last START couldn't download the list
+	get := func(fresh bool) (list []Port, err error) {
+		s.load("Ports", func() ([]Item, error) {
+			if fresh {
+				stale = s.f.refresh(s.src)
+			}
+			list, err = s.f.Ports(s.src)
+			return nil, nil
+		})
+		return list, err
+	}
+	list, err := get(false)
+	for len(list) == 0 {
+		if err == nil {
+			s.scr.Notice(s.input, "Ports", "Turn on the ports list in Repositories.")
+			return
 		}
-		s.scr.Notice(s.input, "Ports", msg)
-		return
+		if !s.retry("Ports", "Couldn't load the ports list: "+tnet.Explain(err).Error()) {
+			return
+		}
+		list, err = get(true)
 	}
 	l := ui.List{}
 	for {
@@ -43,7 +53,7 @@ func (s *store) ports() {
 		sc := s.scr
 		free, _ := spaceText(0)
 		top := sc.StaticFrame("Ports", fmt.Sprintf("%d install from here · %s", n, free),
-			ui.Hint{Button: "A", Label: "Details"}, ui.Hint{Button: "L1/R1", Label: "Page"}, ui.Hint{Button: "B", Label: "Back"})
+			ui.Hint{Button: "A", Label: "Details"}, ui.Hint{Button: "START", Label: "Refresh"}, ui.Hint{Button: "L1/R1", Label: "Page"}, ui.Hint{Button: "B", Label: "Back"})
 		l.Draw(sc, image.Rect(20, top, ui.W-26, ui.H-58))
 		sc.Present()
 		ev, ok := s.next()
@@ -55,8 +65,28 @@ func (s *store) ports() {
 			return
 		case ui.A:
 			s.portDetail(list[l.Sel])
+		case ui.Start:
+			nl, err := get(true)
+			if len(nl) == 0 {
+				msg := "Turn on the ports list in Repositories."
+				if err != nil {
+					msg = "Couldn't load the ports list: " + tnet.Explain(err).Error() + ". The list stays as it was."
+				}
+				s.scr.Notice(s.input, "Ports", msg)
+				break
+			}
+			sel := list[l.Sel].key()
+			list, l.Sel = nl, 0
+			for i, p := range list {
+				if p.key() == sel {
+					l.Sel = i
+				}
+			}
+			if stale != nil {
+				s.scr.Notice(s.input, "Ports", "Couldn't download the list, so the copy on the card is shown: "+tnet.Explain(stale).Error())
+			}
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
 }

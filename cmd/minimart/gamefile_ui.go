@@ -243,7 +243,7 @@ func (s *store) pickIn(title, root string, sub bool, nf *NeedsFile) (string, boo
 			dir = e.path
 			l = ui.List{}
 		default:
-			l.Handle(ev)
+			handle(&l, ev)
 		}
 	}
 }

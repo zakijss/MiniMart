@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/zakijss/minideck/cache"
@@ -58,4 +59,19 @@ func TestCommunitySourceMigrates(t *testing.T) {
 		}
 	}
 	t.Fatal("no Community apps source")
+}
+
+// START on Apps and Ports downloads the lists again; when that fails, the
+// copy on the card stays and the error says which list.
+func TestRefreshKeepsCopy(t *testing.T) {
+	src := Source{Name: "Community apps", Type: "apps", URL: communityCatalog, Enabled: true, Builtin: true}
+	off := &fetcher{http: &http.Client{Transport: offlineTransport{}}, cache: cache.New(t.TempDir())}
+	off.cache.Put(communityCatalog, []byte("kept"))
+	err := off.refresh([]Source{src, {Name: "Off", Type: "apps", URL: "https://example.com/off.json"}})
+	if err == nil || !strings.HasPrefix(err.Error(), "Community apps: ") {
+		t.Fatalf("refresh offline: %v", err)
+	}
+	if b, ok := off.cache.Get(communityCatalog); !ok || string(b) != "kept" {
+		t.Fatalf("kept copy is now %q", b)
+	}
 }
