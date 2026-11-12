@@ -6,6 +6,8 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-12
+
 ### Added
 
 - **START** on Apps and Ports downloads the catalogues again now, instead of showing the copy on the card first, and keeps the selected row. If a download fails, it says so.
@@ -69,7 +71,8 @@ All notable changes are listed here. The format follows
 - The community apps list is built by `tools/catalog` from GitHub and published every day on the `catalog` release; MiniMart falls back to the copy built into it.
 - Ports that need your own game file: MiniMart finds a matching copy on the card or in your own game files folder, or lets you pick one, and copies it into place. It never downloads game data.
 
-[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/zakijss/MiniMart/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/zakijss/MiniMart/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/zakijss/MiniMart/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/zakijss/MiniMart/compare/v1.1.0...v1.1.1
