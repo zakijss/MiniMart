@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -370,12 +371,16 @@ func extractApp(zipPath, dir, prefix, folder string, wrap bool) error {
 	defer r.Close()
 	root, _ := filepath.Abs(dir)
 	base := filepath.Join(root, folder)
+	sweepStaged(base)
 	want := prefix + folder + "/"
 	type entry struct {
 		zf *zip.File
 		to string
 	}
 	var todo []entry
+	// names seen, in lower case (FAT32 doesn't tell case apart): true for
+	// a folder. Two files on one name would leave the app half updated.
+	seen := map[string]bool{}
 	for _, zf := range r.File {
 		name := zf.Name
 		if junk(name) {
@@ -400,6 +405,11 @@ func extractApp(zipPath, dir, prefix, folder string, wrap bool) error {
 		if p != base && !strings.HasPrefix(p, base+string(os.PathSeparator)) {
 			return fmt.Errorf("unsafe path in zip: %s", name)
 		}
+		key, isDir := strings.ToLower(p), zf.FileInfo().IsDir()
+		if wasDir, ok := seen[key]; ok && !(isDir && wasDir) {
+			return fmt.Errorf("the zip has %s twice (names differing only in case are the same file on the card)", name)
+		}
+		seen[key] = isDir
 		todo = append(todo, entry{zf, p})
 	}
 	// Everything is checked before anything is written: an update that
@@ -474,6 +484,17 @@ func extractApp(zipPath, dir, prefix, folder string, wrap bool) error {
 		}
 	}
 	return nil
+}
+
+// sweepStaged removes the .store-new files a power cut during an update
+// left in the app's folder.
+func sweepStaged(base string) {
+	filepath.WalkDir(base, func(p string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() && strings.HasSuffix(p, ".store-new") {
+			os.Remove(p)
+		}
+		return nil
+	})
 }
 
 // writeStaged writes one zip entry to tmp, removing it again on an error.

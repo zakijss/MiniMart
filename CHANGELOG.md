@@ -18,6 +18,8 @@ All notable changes are listed here. The format follows
 
 - An app update that fails part way (a full card, a zip without the app's `config.json`) no longer leaves a mix of old and new files: every new file is written beside the installed one first and only then renamed into place, and the room it needs is checked before anything is written.
 - A file larger than 256 MB in an app's zip is refused instead of being cut short without an error.
+- A zip that holds the same file twice, or two names that differ only in case (one file on the card), is refused before anything is written, instead of half updating the app.
+- Temporary `.store-new` files left in an app's folder by a power cut during an update are removed at the next install or update.
 - Downloads reach the card before they are renamed into place, so power lost just after a theme download can't leave an empty zip.
 
 ## [1.4.1] - 2026-11-12

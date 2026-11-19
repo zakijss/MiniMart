@@ -104,3 +104,50 @@ func TestFailedUpdateKeepsApp(t *testing.T) {
 		t.Error("the update lost settings.json")
 	}
 }
+
+// A zip with one name twice, or two names only the case tells apart (the
+// same file on FAT32), is refused before anything is written; and the
+// .store-new files a power cut left behind are swept away first.
+func TestUpdateDuplicatesAndLeftovers(t *testing.T) {
+	d := t.TempDir()
+	out := filepath.Join(d, "App")
+	app := filepath.Join(out, "Foo")
+	os.MkdirAll(filepath.Join(app, "bin"), 0755)
+	os.WriteFile(filepath.Join(app, "a.txt"), []byte("old"), 0644)
+	zipOf := func(names ...string) string {
+		zp := filepath.Join(d, "u.zip")
+		f, _ := os.Create(zp)
+		w := zip.NewWriter(f)
+		for _, n := range names {
+			e, _ := w.Create(n)
+			e.Write([]byte("new"))
+		}
+		w.Close()
+		f.Close()
+		return zp
+	}
+	for _, names := range [][]string{
+		{"Foo/config.json", "Foo/a.txt", "Foo/a.txt"},
+		{"Foo/config.json", "Foo/a.txt", "Foo/A.TXT"},
+		{"Foo/config.json", "Foo/bin/x", "Foo/BIN/x"},
+		{"Foo/config.json", "Foo/a.txt", "Foo/a.txt/"},
+	} {
+		if err := extractApp(zipOf(names...), out, "", "Foo", false); err == nil || !strings.Contains(err.Error(), "twice") {
+			t.Errorf("%v: %v", names, err)
+		}
+		if b, _ := os.ReadFile(filepath.Join(app, "a.txt")); string(b) != "old" {
+			t.Fatalf("%v: a.txt is %q", names, b)
+		}
+	}
+	// folders listed twice are fine
+	os.WriteFile(filepath.Join(app, "a.txt.store-new"), []byte("half"), 0644)
+	os.WriteFile(filepath.Join(app, "bin", "x.store-new"), []byte("half"), 0644)
+	if err := extractApp(zipOf("Foo/", "Foo/bin/", "Foo/BIN/", "Foo/config.json", "Foo/a.txt"), out, "", "Foo", false); err != nil {
+		t.Fatal(err)
+	}
+	for _, n := range []string{"a.txt.store-new", "bin/x.store-new"} {
+		if _, err := os.Stat(filepath.Join(app, n)); err == nil {
+			t.Errorf("%s left behind", n)
+		}
+	}
+}
