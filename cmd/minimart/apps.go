@@ -156,17 +156,59 @@ func (a App) Installed() bool {
 var versionRe = regexp.MustCompile(`^v?[0-9][0-9A-Za-z.+-]{0,30}$`)
 
 // InstalledVersion is what the store installed or, for an app unzipped by
-// hand, the version.txt its release carries (MiniDeck's apps do). Empty if
-// unknown.
+// hand, the version.txt its release carries (MiniDeck's apps do). When both
+// exist the newer wins: a release unzipped by hand over a store install
+// (the all-apps bundle) leaves the store's record behind. Empty if unknown.
 func (a App) InstalledVersion() string {
+	store := ""
 	if b, err := os.ReadFile(filepath.Join(a.dir(), ".store-version")); err == nil {
-		return strings.TrimSpace(string(b))
+		store = strings.TrimSpace(string(b))
 	}
 	b, _ := os.ReadFile(filepath.Join(a.dir(), "version.txt"))
-	if v := strings.TrimSpace(string(b)); versionRe.MatchString(v) {
-		return strings.TrimPrefix(v, "v")
+	file := strings.TrimSpace(string(b))
+	if !versionRe.MatchString(file) {
+		return store
 	}
-	return ""
+	file = strings.TrimPrefix(file, "v")
+	if store == "" || versionLess(store, file) {
+		return file
+	}
+	return store
+}
+
+// versionLess reports whether version a is older than b, comparing the
+// dot-separated numbers ("1.10.0" is newer than "1.9.2"); anything after
+// the numbers ("-rc1") is ignored.
+func versionLess(a, b string) bool {
+	nums := func(s string) []int {
+		var n []int
+		for _, p := range strings.Split(strings.TrimPrefix(strings.ToLower(s), "v"), ".") {
+			d := 0
+			i := 0
+			for ; i < len(p) && p[i] >= '0' && p[i] <= '9' && i < 9; i++ {
+				d = d*10 + int(p[i]-'0')
+			}
+			n = append(n, d)
+			if i < len(p) {
+				break
+			}
+		}
+		return n
+	}
+	x, y := nums(a), nums(b)
+	for i := 0; i < len(x) || i < len(y); i++ {
+		var p, q int
+		if i < len(x) {
+			p = x[i]
+		}
+		if i < len(y) {
+			q = y[i]
+		}
+		if p != q {
+			return p < q
+		}
+	}
+	return false
 }
 
 // Manifest returns where the app's release zip is and its checksum: from

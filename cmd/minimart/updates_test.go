@@ -207,3 +207,22 @@ func TestCheckInBackground(t *testing.T) {
 		t.Fatal("a day-old check wasn't redone")
 	}
 }
+
+func TestVersionLess(t *testing.T) {
+	for _, c := range []struct {
+		a, b string
+		less bool
+	}{
+		{"1.1.1", "1.2.0", true},
+		{"1.2.0", "1.1.1", false},
+		{"1.9.2", "1.10.0", true},
+		{"v1.2", "1.2.0", false},
+		{"1.2.0", "1.2.0", false},
+		{"1.0.0-rc11", "1.0.0", false},
+		{"", "0.1", true},
+	} {
+		if got := versionLess(c.a, c.b); got != c.less {
+			t.Errorf("versionLess(%q, %q) = %v, want %v", c.a, c.b, got, c.less)
+		}
+	}
+}

@@ -173,6 +173,18 @@ func TestInstallFirstPartyKeepsData(t *testing.T) {
 		t.Errorf("version.txt: %q", v)
 	}
 
+	// a newer release unzipped by hand over a store install wins over the
+	// store's older record; an older version.txt doesn't
+	os.WriteFile(filepath.Join(dir, ".store-version"), []byte("0.1.9\n"), 0644)
+	if v := a.InstalledVersion(); v != "0.2.0" {
+		t.Errorf("stale store record: %q", v)
+	}
+	os.WriteFile(filepath.Join(dir, ".store-version"), []byte("0.10.0\n"), 0644)
+	if v := a.InstalledVersion(); v != "0.10.0" {
+		t.Errorf("newer store record: %q", v)
+	}
+	os.Remove(filepath.Join(dir, ".store-version"))
+
 	if err := RemoveApp(a); err != nil {
 		t.Fatal(err)
 	}

@@ -6,6 +6,12 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-11-19
+
+### Fixed
+
+- After the all-apps zip was unzipped by hand over apps MiniMart had installed, Updates offered every app again: it believed its own older record over the app's `version.txt`. It now takes the newer of the two.
+
 ## [1.5.0] - 2026-11-19
 
 ### Added
@@ -93,7 +99,8 @@ All notable changes are listed here. The format follows
 - The community apps list is built by `tools/catalog` from GitHub and published every day on the `catalog` release; MiniMart falls back to the copy built into it.
 - Ports that need your own game file: MiniMart finds a matching copy on the card or in your own game files folder, or lets you pick one, and copies it into place. It never downloads game data.
 
-[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/zakijss/MiniMart/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/zakijss/MiniMart/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/zakijss/MiniMart/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/zakijss/MiniMart/compare/v1.3.0...v1.4.0
