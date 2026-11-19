@@ -169,6 +169,7 @@ func TestScreens(t *testing.T) {
 	shot("ports-5-guide", withSrc(func(s *store) { s.portDetail(portNamed("Stardew Valley")) }))
 	shot("ports-6-app", withSrc(func(s *store) { s.portDetail(portNamed("PocketStream")) }))
 	shot("ports-7-confirm", withSrc(func(s *store) { s.installPort(portNamed("Captain Claw"), PortState{}) }))
+	shot("ports-8-signed", withSrc(func(s *store) { s.portDetail(portNamed("Endless Sky")) }))
 }
 
 // sampleReadme is a README with the parts the conversion handles.

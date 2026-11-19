@@ -1,8 +1,26 @@
 {
   "name": "MiyooMini Ports",
-  "generated": "2026-11-02",
+  "generated": "2026-11-19",
   "from": "https://raw.githubusercontent.com/Producdevity/MiyooMini-Ports/master/ports.json",
   "ports": [
+    {
+      "name": "Endless Sky",
+      "categories": [
+        "space",
+        "trading"
+      ],
+      "status": "playable",
+      "assets": "free",
+      "upstream": "https://github.com/zakijss/EndlessSky/releases",
+      "image": "",
+      "notes": "The full space trading and combat game, with a software renderer, 640x480 layouts and button controls. It also updates itself from its releases.",
+      "porter": [
+        "ZJSS"
+      ],
+      "why": "its releases aren't signed yet (no .minisig beside the zip)",
+      "signed": true,
+      "versionfile": "Games/Endless Sky/port-version.txt"
+    },
     {
       "name": "Stardew Valley",
       "categories": [
@@ -785,8 +803,8 @@
       ],
       "repo": "k2-ant/mini-tracker",
       "license": "MIT",
-      "version": "1.0.1",
-      "released": "2026-06-17",
+      "version": "1.1.0",
+      "released": "2026-11-05",
       "app": "MiniTracker"
     },
     {
@@ -1015,8 +1033,8 @@
       ],
       "repo": "mxmgorin/retsurf",
       "license": "GPL-3.0",
-      "version": "0.10.0",
-      "released": "2026-10-08",
+      "version": "0.11.0",
+      "released": "2026-11-18",
       "app": "Retsurf"
     },
     {
@@ -1058,19 +1076,19 @@
       "status": "playable",
       "assets": "owned",
       "upstream": "https://github.com/cacuracaptors/fallout1-ce-miyoomini/releases",
-      "image": "https://raw.githubusercontent.com/cacuracaptors/fallout1-ce-miyoomini/7a5e5cc969a8e406afed837892e40c487524cc45/docs/images/cover.png",
+      "image": "https://github.com/user-attachments/assets/0214c398-e544-4cfe-b499-f5bfc20ecb51",
       "notes": "fallout1-ce port with a full D-pad/button control scheme. Supply your own master.dat, critter.dat, and data folder.",
       "porter": [
         "cacuracaptors"
       ],
       "repo": "cacuracaptors/fallout1-ce-miyoomini",
       "license": "Other",
-      "version": "1.2.0",
-      "released": "2026-10-08",
-      "zip": "https://github.com/cacuracaptors/fallout1-ce-miyoomini/releases/download/v1.2.0/Fallout1-Miyoo-v1.2.0.zip",
-      "sha256": "074489f32aa100c7ef9b21852ffbcf4d1af77a74c1efd78716a86aa2c158522d",
-      "size": 12814507,
-      "unpacked": 29760697,
+      "version": "1.3.2",
+      "released": "2026-11-17",
+      "zip": "https://github.com/cacuracaptors/fallout1-ce-miyoomini/releases/download/v1.3.2/Fallout1-Miyoo-v1.3.2.zip",
+      "sha256": "37a17b74710ca514d08ca1dc09173a3fd264d4f1ae7b0447660daae76ca8d40c",
+      "size": 12935781,
+      "unpacked": 29930432,
       "root": "Roms/PORTS/",
       "games": [
         {
@@ -1088,19 +1106,19 @@
       "status": "playable",
       "assets": "owned",
       "upstream": "https://github.com/cacuracaptors/fallout2-ce-miyoomini/releases",
-      "image": "https://raw.githubusercontent.com/cacuracaptors/fallout2-ce-miyoomini/e8b85743887c4ac0c836b4c4aa0bc13ae8c70020/docs/images/cover.png",
+      "image": "https://github.com/user-attachments/assets/4ec40f25-2b69-4395-af69-c50c6a97ef87",
       "notes": "Based on the actively maintained FOR:CE fork, not the original fallout2-ce. Native mod support, including the Restoration Project. Supply your own master.dat, critter.dat, and data folder.",
       "porter": [
         "cacuracaptors"
       ],
       "repo": "cacuracaptors/fallout2-ce-miyoomini",
       "license": "Other",
-      "version": "1.2.0",
-      "released": "2026-10-08",
-      "zip": "https://github.com/cacuracaptors/fallout2-ce-miyoomini/releases/download/v1.2.0/Fallout2-Miyoo-v1.2.0.zip",
-      "sha256": "b852b99dc7ef11827402c19f4dcabe57942926b8a2d95eff5312caa3e3d86720",
-      "size": 14392761,
-      "unpacked": 33527172,
+      "version": "1.3.2",
+      "released": "2026-11-17",
+      "zip": "https://github.com/cacuracaptors/fallout2-ce-miyoomini/releases/download/v1.3.2/Fallout2-Miyoo-v1.3.2.zip",
+      "sha256": "aa7035651a9884606ced05183c825e3122f07b000c65a1a4f07837d1c3e535c1",
+      "size": 14524339,
+      "unpacked": 33790274,
       "root": "Roms/PORTS/",
       "games": [
         {
@@ -1118,7 +1136,7 @@
       "status": "playable",
       "assets": "owned",
       "upstream": "https://github.com/cacuracaptors/spacecadetpinball-miyoomini/releases",
-      "image": "https://raw.githubusercontent.com/cacuracaptors/spacecadetpinball-miyoomini/570f37d26eb32936689c248b3f32ec8df108f971/docs/images/cover.png",
+      "image": "https://github.com/user-attachments/assets/07fd8c58-e452-43f3-be5c-d1b75149a563",
       "notes": "k4zmu2a decompilation. Supply PINBALL.DAT, FONT.DAT, and all SOUND*.WAV files from the original Windows install.",
       "porter": [
         "cacuracaptors"
@@ -1180,7 +1198,7 @@
       "status": "playable",
       "assets": "owned",
       "upstream": "https://github.com/cacuracaptors/OpenLara-miyoomini/releases",
-      "image": "https://raw.githubusercontent.com/cacuracaptors/OpenLara-miyoomini/c4c3afb38ff42ab3d1853ef81505967d168c32ec/docs/images/cover.png",
+      "image": "https://github.com/user-attachments/assets/082c6607-84d6-4ae0-8333-ce1473b554d8",
       "notes": "OpenLara engine with a rebuilt dual-core software renderer; Tomb Raider 1 only. Requires the GOG version (Tomb Raider 1+2+3): supply GAME.GOG (required, the game data is extracted from it on first start) and, optionally, the 02.mp3 to 10.mp3 music files.",
       "porter": [
         "cacuracaptors"
@@ -1351,13 +1369,13 @@
       "status": "playable",
       "assets": "owned",
       "upstream": "https://github.com/cacuracaptors/uhexen2-miyoomini/releases",
-      "image": "https://raw.githubusercontent.com/cacuracaptors/uhexen2-miyoomini/6ac865077583482c9c8216f27aba0822db77fabf/docs/images/cover.png",
+      "image": "https://github.com/user-attachments/assets/67f81b26-3ccb-4996-8534-b470c924714b",
       "notes": "uHexen2 (Hammer of Thyrion) with the original software renderer spread over both cores; 640x480 3D view, 50-60 FPS. Requires the GOG version: supply everything in its data1 folder (required) and, optionally, its music folder (Track02.ogg to Track17.ogg) for the CD soundtrack.",
       "porter": [
         "cacuracaptors"
       ],
       "repo": "cacuracaptors/uhexen2-miyoomini",
-      "license": "None",
+      "license": "MIT",
       "version": "1.1.0",
       "released": "2026-10-28",
       "zip": "https://github.com/cacuracaptors/uhexen2-miyoomini/releases/download/v1.1.0/HexenII-miyoomini-v1.1.0.zip",
@@ -1382,13 +1400,13 @@
       "status": "playable",
       "assets": "free",
       "upstream": "https://github.com/cacuracaptors/skifree-miyoomini/releases",
-      "image": "https://raw.githubusercontent.com/cacuracaptors/skifree-miyoomini/35e547a4b3a157073daf2aa9d9a737f54a0ad150/docs/images/cover.png",
+      "image": "https://github.com/user-attachments/assets/a3d3468b-2df6-4577-93d9-4431e547da63",
       "notes": "Based on the SkiFree decompilation and Slayer366's SDL2 source port. Ready to run: extract the zip to the SD card root, nothing to supply. 60 fps at the original game speed (Menu+Start switches to the original 25 fps); High Scores with name entry (Menu+Select).",
       "porter": [
         "cacuracaptors"
       ],
       "repo": "cacuracaptors/skifree-miyoomini",
-      "license": "None",
+      "license": "MIT",
       "version": "1.0.1",
       "released": "2026-10-15",
       "zip": "https://github.com/cacuracaptors/skifree-miyoomini/releases/download/v1.0.1/SkiFree-Miyoo-v1.0.1.zip",
@@ -1444,13 +1462,13 @@
       "status": "playable",
       "assets": "owned",
       "upstream": "https://github.com/cacuracaptors/mk64-miyoomini/releases",
-      "image": "https://raw.githubusercontent.com/cacuracaptors/mk64-miyoomini/19a74afb49488f2430a9c0d8a3e08d561e8bb104/docs/images/cover.png",
+      "image": "https://github.com/user-attachments/assets/98a96592-1408-4140-a426-519dcb4edcc7",
       "notes": "jnmartin84's mk64-dc (Dreamcast port of the Mario Kart 64 decompilation) with a dual-core software renderer: 640x480, 60 FPS single-player races, no overclock. Supply your own Mario Kart 64 (USA) ROM (.z64, .n64, .v64 or zipped); the game data is built from it on the first start. Save states and Game Switcher.",
       "porter": [
         "cacuracaptors"
       ],
       "repo": "cacuracaptors/mk64-miyoomini",
-      "license": "None",
+      "license": "MIT",
       "version": "1.1.7",
       "released": "2026-10-20",
       "zip": "https://github.com/cacuracaptors/mk64-miyoomini/releases/download/v1.1.7/MarioKart64-Miyoo-v1.1.7.zip",
@@ -1577,8 +1595,8 @@
       ],
       "repo": "retroshelf64nmore/miyoo-bible",
       "license": "MIT",
-      "version": "1.1.0",
-      "released": "2026-10-28",
+      "version": "1.2.0",
+      "released": "2026-11-05",
       "app": "Bible"
     },
     {
@@ -1599,6 +1617,215 @@
       "version": "1.0.2",
       "released": "2026-10-28",
       "app": "Overclock"
+    },
+    {
+      "name": "Kingdom: New Lands",
+      "categories": [
+        "strategy",
+        "simulation"
+      ],
+      "status": "playable",
+      "assets": "owned",
+      "upstream": "https://github.com/devarshi16/kingdom-miyoo/releases",
+      "image": "https://raw.githubusercontent.com/devarshi16/kingdom-miyoo/main/media/gameplay.gif",
+      "notes": "Native clean-room port running at 60 FPS. BYOD: requires Kingdom_Data from Steam, GOG, or Epic Games. Built for OnionOS on Miyoo Mini and Mini Plus.",
+      "porter": [
+        "devarshi16"
+      ],
+      "repo": "devarshi16/kingdom-miyoo",
+      "license": "None",
+      "version": "1.1.0",
+      "released": "2026-11-03",
+      "zip": "https://github.com/devarshi16/kingdom-miyoo/releases/download/v1.1.0/KingdomNewLands-MiyooMini-1.1.0.zip",
+      "sha256": "9f4e5631443261f7ec8fe33b5e75daa272bc8ea7785c09ade823a27c918b9d25",
+      "size": 17317639,
+      "unpacked": 19084029,
+      "root": "Roms/PORTS/",
+      "games": [
+        {
+          "shortcut": "Strategy/Kingdom New Lands",
+          "dir": "KingdomNewLands",
+          "data": "knl.sh",
+          "shipped": true
+        }
+      ]
+    },
+    {
+      "name": "Risk of Rain (2013)",
+      "categories": [
+        "platform"
+      ],
+      "status": "playable",
+      "assets": "owned",
+      "upstream": "https://github.com/Fnava1/risk-of-rain-miyoo/releases",
+      "image": "https://raw.githubusercontent.com/Fnava1/risk-of-rain-miyoo/master/dist/Roms/PORTS/Imgs/Risk%20of%20Rain.png",
+      "notes": "Untested on the original Mini. Extract the release, then copy your PC data.win and all .ogg sound files to Roms/PORTS/Games/Risk of Rain/.",
+      "porter": [
+        "Fnava1"
+      ],
+      "repo": "Fnava1/risk-of-rain-miyoo",
+      "license": "MIT",
+      "version": "1.1.1",
+      "released": "2026-11-07",
+      "zip": "https://github.com/Fnava1/risk-of-rain-miyoo/releases/download/v1.1.1/Risk_of_Rain_MiyooMiniPlus.zip",
+      "sha256": "e0c2cb8d0533fbaaf8e6081742806f82edccf77d19ed98f498a56d2b607bcf04",
+      "size": 2891659,
+      "unpacked": 2890173,
+      "root": "Roms/PORTS/",
+      "games": [
+        {
+          "shortcut": "Action/Risk of Rain",
+          "dir": "Risk of Rain",
+          "data": "launch.sh",
+          "shipped": true
+        }
+      ]
+    },
+    {
+      "name": "Broforce Lite",
+      "categories": [
+        "arcade",
+        "shooter"
+      ],
+      "status": "playable",
+      "assets": "free",
+      "upstream": "https://github.com/jajarom82/broforce-lite/releases",
+      "image": "https://raw.githubusercontent.com/jajarom82/broforce-lite/main/preview/01_title.png",
+      "notes": "Fan demake of Broforce. Tested on Miyoo Mini Plus only.",
+      "porter": [
+        "jajarom82"
+      ],
+      "repo": "jajarom82/broforce-lite",
+      "license": "None",
+      "version": "0.6",
+      "released": "2026-10-28",
+      "app": "BroforceLite"
+    },
+    {
+      "name": "The Legend of Zelda: Ocarina of Time",
+      "categories": [
+        "rpg",
+        "platform"
+      ],
+      "status": "playable",
+      "assets": "owned",
+      "upstream": "https://github.com/cacuracaptors/oot-miyoomini/releases",
+      "image": "https://raw.githubusercontent.com/cacuracaptors/oot-miyoomini/d5f4ced4214ba495b13738a2aab441b4abecfdc0/docs/screenshot.png",
+      "notes": "zeldaret/oot decompilation with a dual-core software renderer: dynamic resolution up to 640x480, the game's 20 FPS interpolated to 30 FPS, Ship of Harkinian enhancements, customizable buttons, in-game options menu and save states. Supply your own Ocarina of Time USA 1.1 (Rev A) ROM (.z64, .n64, .v64 or zipped); the game data is built from it on the first start. English, Japanese, Brazilian Portuguese, Italian and Spanish included; the Europe (En,Fr,De) (Rev A) ROM optionally adds German and French.",
+      "porter": [
+        "cacuracaptors"
+      ],
+      "repo": "cacuracaptors/oot-miyoomini",
+      "license": "MIT",
+      "version": "1.2.0",
+      "released": "2026-11-18",
+      "zip": "https://github.com/cacuracaptors/oot-miyoomini/releases/download/v1.2.0/ZeldaOoT-miyoomini-v1.2.0.zip",
+      "sha256": "30fbec13db2b8e1ee1914203518064302896a3ac4f5813c4d143bd7ef5b5b9f9",
+      "size": 5174214,
+      "unpacked": 11534408,
+      "root": "Roms/PORTS/",
+      "games": [
+        {
+          "shortcut": "Zelda - Ocarina of Time",
+          "dir": "ZeldaOoT",
+          "data": "oot",
+          "shipped": true
+        }
+      ]
+    },
+    {
+      "name": "Ikachan",
+      "categories": [
+        "arcade"
+      ],
+      "status": "playable",
+      "assets": "free",
+      "upstream": "https://github.com/yughias/Ikachan-Recomp/releases",
+      "image": "https://raw.githubusercontent.com/yughias/Ikachan-Recomp/bda7c317e2cfe0837daf12c3b3942542e7861174/Resource/icon.bmp",
+      "notes": "Ikachan recompiled with SDL2 and autosave support for OnionOS. Extract the Miyoo release ZIP to the root of your SD card.",
+      "porter": [
+        "yughias"
+      ],
+      "repo": "yughias/Ikachan-Recomp",
+      "license": "None",
+      "version": "0.0.2",
+      "released": "2026-11-14",
+      "zip": "https://github.com/yughias/Ikachan-Recomp/releases/download/v0.0.2/ikachan-miyoo.zip",
+      "sha256": "9597f599a28fb82694bece49cf90b767d83a0351d6812b118479d575952ed64a",
+      "size": 11433915,
+      "unpacked": 25164836,
+      "root": "Roms/PORTS/",
+      "games": [
+        {
+          "shortcut": "Action/Ikachan",
+          "dir": "Ikachan",
+          "data": "NPChar.dat",
+          "shipped": true
+        }
+      ]
+    },
+    {
+      "name": "Minit",
+      "categories": [
+        "arcade"
+      ],
+      "status": "experimental",
+      "assets": "owned",
+      "upstream": "https://github.com/devarshi16/minit-miyoo/releases",
+      "image": "https://raw.githubusercontent.com/devarshi16/minit-miyoo/cf08b5f12a7c586ae5feed0116bc1e3ef1b9c3c3/docs/media/gameplay.gif",
+      "notes": "Supply data.win, minit_loc.csv and all .ogg files from your PC copy. Upstream tested early areas on Mini Plus (OnionOS); this contributor also reports Mini v4 testing. Later areas, the ending and Mini Flip remain unverified. Short frame drops can occur.",
+      "porter": [
+        "devarshi16"
+      ],
+      "repo": "devarshi16/minit-miyoo",
+      "license": "AGPL-3.0",
+      "version": "0.9",
+      "released": "2026-11-03",
+      "zip": "https://github.com/devarshi16/minit-miyoo/releases/download/v0.9/Minit-MiyooMini-0.9.zip",
+      "sha256": "af9ca611512cefccaf1a8d5ff4f58f31d1f8a8cf586a14a3e483faf42c522b7d",
+      "size": 902192,
+      "unpacked": 1948338,
+      "root": "Roms/PORTS/",
+      "games": [
+        {
+          "shortcut": "Action/Minit",
+          "dir": "Minit",
+          "data": "minit.sh",
+          "shipped": true
+        }
+      ]
+    },
+    {
+      "name": "Slay the Spire",
+      "categories": [
+        "strategy",
+        "rpg"
+      ],
+      "status": "prerelease",
+      "assets": "owned",
+      "upstream": "https://github.com/devarshi16/slay-the-spire-miyoo/releases",
+      "image": "https://raw.githubusercontent.com/devarshi16/slay-the-spire-miyoo/521772858163d2b03d29f353ae4478f8c497ae30/docs/media/gameplay.gif",
+      "notes": "Native ARMv7 runtime for OnionOS (1600 MHz via cpuclock). Supply base.apk and split_InstallPack.apk from your legally owned ARMv7 Android copy (PC/iOS builds unsupported); first boot extracts assets and downscales textures on-device (~1-2 min, ~1.6 GB free required). Tested on Miyoo Mini Plus (OnionOS); Mini v4 and Mini Flip unverified, new profiles default to Miyoo, and CJK glyph rendering is unsupported.",
+      "porter": [
+        "devarshi16"
+      ],
+      "repo": "devarshi16/slay-the-spire-miyoo",
+      "license": "MIT",
+      "version": "0.9.0-beta.2",
+      "released": "2026-11-15",
+      "zip": "https://github.com/devarshi16/slay-the-spire-miyoo/releases/download/v0.9.0-beta.2/SlayTheSpire-MiyooMini-0.9.0-beta.2.zip",
+      "sha256": "258ab610bfbba9a935222e41a3b8f50661bd106c2690e82437064cde2e2cc3f6",
+      "size": 3784485,
+      "unpacked": 421568,
+      "root": "Roms/PORTS/",
+      "games": [
+        {
+          "shortcut": "Slay the Spire",
+          "dir": "SlayTheSpire",
+          "data": "launch.sh",
+          "shipped": true
+        }
+      ]
     }
   ]
 }
