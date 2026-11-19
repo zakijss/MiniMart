@@ -653,7 +653,13 @@ func (f *fetcher) fetchPart(u, part string, limit int64, progress func(done, tot
 			return fail(rerr)
 		}
 	}
-	if err := out.Close(); err != nil {
+	// On the card before it is renamed into place: a theme zip is kept as
+	// it is, and power lost after the rename mustn't leave it empty.
+	err = out.Sync()
+	if cerr := out.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
 		os.Remove(part)
 		return err
 	}

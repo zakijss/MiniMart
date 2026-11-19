@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"syscall"
 	"unicode"
 
 	"github.com/zakijss/minideck/atomicfile"
@@ -271,13 +272,7 @@ func unpackApp(a App, zipPath, appRoot string) error {
 	default:
 		err = unzipApp(zipPath, appRoot, a.Strip, a.Folder)
 	}
-	if err != nil {
-		return err
-	}
-	if _, err := os.Stat(filepath.Join(appRoot, a.Folder, "config.json")); err != nil {
-		return fmt.Errorf("the zip didn't contain App/%s", a.Folder)
-	}
-	return nil
+	return err
 }
 
 // installBoot copies the named boot scripts from the zip's
@@ -363,7 +358,7 @@ func junk(name string) bool {
 // folder/. Stray
 // files, __MACOSX, links and devices are left out. Every path is checked
 // before anything is written: one that would land outside dir/folder (zip
-// slip) refuses the whole zip.
+// slip), no config.json or too little room refuses the whole zip.
 func extractApp(zipPath, dir, prefix, folder string, wrap bool) error {
 	if err := validFolder(folder); err != nil {
 		return err
@@ -407,48 +402,22 @@ func extractApp(zipPath, dir, prefix, folder string, wrap bool) error {
 		}
 		todo = append(todo, entry{zf, p})
 	}
-	n := 0
+	// Everything is checked before anything is written: an update that
+	// would fail part way must leave the installed app as it was.
+	var need int64
+	files, config := 0, false
 	for _, e := range todo {
-		if e.zf.FileInfo().IsDir() {
-			if err := os.MkdirAll(e.to, 0755); err != nil {
-				return fmt.Errorf("unpacking %s: %w", e.zf.Name, err)
-			}
-			continue
+		if e.zf.FileInfo().IsDir() || !e.zf.Mode().IsRegular() {
+			continue // folders are made below; no links or devices
 		}
-		if !e.zf.Mode().IsRegular() {
-			continue // no links or devices
+		if e.zf.UncompressedSize64 > 256<<20 {
+			return fmt.Errorf("%s is too big to unpack", e.zf.Name)
 		}
-		if err := os.MkdirAll(filepath.Dir(e.to), 0755); err != nil {
-			return fmt.Errorf("unpacking %s: %w", e.zf.Name, err)
-		}
-		in, err := e.zf.Open()
-		if err != nil {
-			return err
-		}
-		// Each file is written beside its final name and renamed into
-		// place (see writeFileAtomic): updating the store itself, or an app
-		// whose daemon is running, replaces files that are in use.
-		tmp := e.to + ".store-new"
-		out, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
-		if err != nil {
-			in.Close()
-			return err
-		}
-		_, err = io.Copy(out, io.LimitReader(in, 256<<20))
-		in.Close()
-		if cerr := out.Close(); err == nil {
-			err = cerr
-		}
-		if err == nil {
-			err = os.Rename(tmp, e.to)
-		}
-		if err != nil {
-			os.Remove(tmp)
-			return err
-		}
-		n++
+		need += int64(e.zf.UncompressedSize64)
+		files++
+		config = config || e.to == filepath.Join(base, "config.json")
 	}
-	if n == 0 {
+	if files == 0 {
 		if wrap && prefix == "" {
 			return errors.New("the zip has no files")
 		}
@@ -457,7 +426,76 @@ func extractApp(zipPath, dir, prefix, folder string, wrap bool) error {
 		}
 		return fmt.Errorf("the zip has nothing under %s", want)
 	}
+	if !config {
+		return fmt.Errorf("the zip didn't contain App/%s", folder)
+	}
+	if free := freeSpace(root); free >= 0 && free < need+need/20+(2<<20) {
+		return fmt.Errorf("not enough space on the card to unpack it (it needs %s, %s free): make room first (MiniTop › Storage)", humanSize(need), humanSize(free))
+	}
+	// Each file is first written beside its final name (an update, or the
+	// store updating itself, replaces files that are in use). Only once all
+	// of them are written are they renamed into place, so a full card or a
+	// bad entry leaves the installed app untouched.
+	var staged []entry
+	unstage := func() {
+		for _, e := range staged {
+			os.Remove(e.to + ".store-new")
+		}
+	}
+	for _, e := range todo {
+		if e.zf.FileInfo().IsDir() {
+			if err := os.MkdirAll(e.to, 0755); err != nil {
+				unstage()
+				return fmt.Errorf("unpacking %s: %w", e.zf.Name, err)
+			}
+			continue
+		}
+		if !e.zf.Mode().IsRegular() {
+			continue
+		}
+		if err := os.MkdirAll(filepath.Dir(e.to), 0755); err != nil {
+			unstage()
+			return fmt.Errorf("unpacking %s: %w", e.zf.Name, err)
+		}
+		if err := writeStaged(e.zf, e.to+".store-new"); err != nil {
+			unstage()
+			return fmt.Errorf("unpacking %s: %w", e.zf.Name, err)
+		}
+		staged = append(staged, e)
+	}
+	// The new files reach the card before any old one is replaced: power
+	// lost from here on leaves each file whole, old or new.
+	syscall.Sync()
+	for i, e := range staged {
+		if err := os.Rename(e.to+".store-new", e.to); err != nil {
+			staged = staged[i:]
+			unstage()
+			return fmt.Errorf("unpacking %s: %w", e.zf.Name, err)
+		}
+	}
 	return nil
+}
+
+// writeStaged writes one zip entry to tmp, removing it again on an error.
+// The zip reader refuses more bytes than the entry declares, and a bad CRC.
+func writeStaged(zf *zip.File, tmp string) error {
+	in, err := zf.Open()
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.OpenFile(tmp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(out, in)
+	if cerr := out.Close(); err == nil {
+		err = cerr
+	}
+	if err != nil {
+		os.Remove(tmp)
+	}
+	return err
 }
 
 // secureRe: one or more path segments of letters, digits, '.', '_' and
