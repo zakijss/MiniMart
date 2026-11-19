@@ -128,6 +128,9 @@ func (g *gen) buildPorts(listURL string, exclude map[string]string, own []Port) 
 	out := PortsDoc{Name: "MiyooMini Ports", Generated: g.today, From: listURL}
 	for i, p := range append(own, doc.Ports...) {
 		mine := i < len(own)
+		if m := githubRepoRe.FindStringSubmatch(p.Upstream); m != nil && ownerSkipped(m[1]) {
+			continue
+		}
 		licence := ""
 		if mine {
 			licence = p.License

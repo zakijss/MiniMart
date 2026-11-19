@@ -574,3 +574,43 @@ func TestPortSigned(t *testing.T) {
 		})
 	}
 }
+
+func TestPortRecordsIndex(t *testing.T) {
+	portCard(t)
+	// an index from before the file lists were kept apart
+	old := `{"a/g#G": {"name": "G", "version": "1", "files": ["Games/G/g", "Shortcuts/G.port"], "shortcuts": ["G"]}}`
+	if err := os.WriteFile(portRecordsPath(), []byte(old), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	recs := loadPortRecords()
+	if r := recs["a/g#G"]; r.Version != "1" || r.Files != nil {
+		t.Fatalf("%+v", r)
+	}
+	if b, _ := os.ReadFile(portRecordsPath()); strings.Contains(string(b), "files") {
+		t.Fatalf("index still holds the files: %s", b)
+	}
+	if fs := portFiles("a/g#G"); len(fs) != 2 || fs[1] != "Shortcuts/G.port" {
+		t.Fatal(fs)
+	}
+	// read once: a change on the card isn't parsed again for each redraw
+	os.WriteFile(portRecordsPath(), []byte("{}"), 0o644)
+	recs["x"] = portRecord{}
+	if got := loadPortRecords(); len(got) != 1 || got["a/g#G"].Version != "1" {
+		t.Fatalf("not cached, or the copy is shared: %v", got)
+	}
+	// saving updates the copy kept
+	recs = loadPortRecords()
+	recs["a/g#G"] = portRecord{Name: "G", Version: "2", Files: []string{"Games/G/h"}}
+	if err := savePortRecords(recs); err != nil {
+		t.Fatal(err)
+	}
+	if got := loadPortRecords()["a/g#G"]; got.Version != "2" || got.Files != nil || len(portFiles("a/g#G")) != 1 {
+		t.Fatalf("%+v %v", got, portFiles("a/g#G"))
+	}
+	if err := RemovePort(Port{Name: "G", Repo: "a/g"}); err != nil {
+		t.Fatal(err)
+	}
+	if len(loadPortRecords()) != 0 || exists(portFilesPath("a/g#G")) {
+		t.Fatal("record or file list left after removal")
+	}
+}

@@ -18,11 +18,14 @@ package main
 
 import (
 	"archive/zip"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"net/url"
 	"os"
 	"path"
@@ -31,6 +34,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -283,35 +287,113 @@ func (f *fetcher) Ports(ss []Source) ([]Port, error) {
 	return out, nil
 }
 
-// portRecord is what the store installed for a port.
+// portRecord is what the store installed for a port. The list of files
+// (tens of thousands for a big game) is kept apart, in portFilesPath, and
+// read only to update or remove the port; Files is set only on its way
+// there, or from an index written before it was kept apart.
 type portRecord struct {
 	Name      string   `json:"name"`
 	Version   string   `json:"version"`
 	SHA256    string   `json:"sha256"`
-	Files     []string `json:"files"`     // relative to Roms/PORTS
-	Shortcuts []string `json:"shortcuts"` // as PortGame.Shortcut
+	Files     []string `json:"files,omitempty"` // relative to Roms/PORTS
+	Shortcuts []string `json:"shortcuts"`       // as PortGame.Shortcut
 	Date      string   `json:"date"`
 }
 
 func portRecordsPath() string { return filepath.Join(appdir.Dir(), "ports-installed.json") }
 
+// portFilesPath is where a port's file list is kept.
+func portFilesPath(key string) string {
+	h := sha256.Sum256([]byte(key))
+	return filepath.Join(appdir.Dir(), "ports-files", hex.EncodeToString(h[:8])+".json")
+}
+
+// portRecs is the index as last read or written, so drawing a list doesn't
+// read the card again.
+var portRecs struct {
+	sync.Mutex
+	path string
+	m    map[string]portRecord
+}
+
+// loadPortRecords returns a copy of the index, read once. An index from
+// before file lists were kept apart is rewritten without them.
 func loadPortRecords() map[string]portRecord {
-	var m map[string]portRecord
-	if err := loadJSON(portRecordsPath(), &m); err != nil {
-		log.Print(err)
+	portRecs.Lock()
+	defer portRecs.Unlock()
+	if portRecs.path != portRecordsPath() {
+		var m map[string]portRecord
+		if err := loadJSON(portRecordsPath(), &m); err != nil {
+			log.Print(err)
+		}
+		if m == nil {
+			m = map[string]portRecord{}
+		}
+		for _, r := range m {
+			if r.Files != nil {
+				if err := writePortRecords(m); err != nil {
+					log.Printf("ports: %v", err)
+				}
+				break
+			}
+		}
+		portRecs.path, portRecs.m = portRecordsPath(), m
 	}
-	if m == nil {
-		m = map[string]portRecord{}
-	}
-	return m
+	return maps.Clone(portRecs.m)
 }
 
 func savePortRecords(m map[string]portRecord) error {
+	portRecs.Lock()
+	defer portRecs.Unlock()
+	portRecs.path = ""
+	if err := writePortRecords(m); err != nil {
+		return err
+	}
+	portRecs.path, portRecs.m = portRecordsPath(), maps.Clone(m)
+	return nil
+}
+
+// writePortRecords writes the file list of each record that carries one
+// (removing it from the record), then the index.
+func writePortRecords(m map[string]portRecord) error {
+	for k, r := range m {
+		if r.Files == nil {
+			continue
+		}
+		b, err := json.Marshal(r.Files)
+		if err != nil {
+			return err
+		}
+		if err := os.MkdirAll(filepath.Dir(portFilesPath(k)), 0755); err != nil {
+			return err
+		}
+		if err := atomicfile.Write(portFilesPath(k), b, 0644); err != nil {
+			return err
+		}
+		r.Files = nil
+		m[k] = r
+	}
 	b, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
 		return err
 	}
 	return atomicfile.Write(portRecordsPath(), b, 0644)
+}
+
+// portFiles is the list of files the store installed for the port: from
+// its own file, or from an old index that couldn't be rewritten.
+func portFiles(key string) []string {
+	portRecs.Lock()
+	r := portRecs.m[key]
+	portRecs.Unlock()
+	if r.Files != nil {
+		return r.Files
+	}
+	var fs []string
+	if err := loadJSON(portFilesPath(key), &fs); err != nil {
+		log.Print(err)
+	}
+	return fs
 }
 
 // shortcutFile returns the shortcut's file on the card and whether it is
@@ -634,7 +716,7 @@ func (f *fetcher) DownloadPort(p Port, progress func(done, total int64)) (*pendi
 	}
 	pp := &pendingPort{p: p, tmp: tmp, zr: zr, es: es}
 	ours := map[string]bool{}
-	for _, f := range loadPortRecords()[p.key()].Files {
+	for _, f := range portFiles(p.key()) {
 		ours[strings.ToLower(f)] = true
 	}
 	for _, e := range es {
@@ -688,7 +770,7 @@ func (pp *pendingPort) Install(progress func(done, total int64)) ([]PortGame, er
 	defer pp.Discard()
 	p := pp.p
 	recs := loadPortRecords()
-	prev := recs[p.key()]
+	prevFiles := portFiles(p.key())
 	var total, done int64
 	for _, e := range pp.es {
 		total += int64(e.zf.UncompressedSize64)
@@ -711,7 +793,7 @@ func (pp *pendingPort) Install(progress func(done, total int64)) ([]PortGame, er
 		progress(done, total)
 		if err != nil {
 			// Record what was written so far, so Remove can clean up.
-			recs[p.key()] = portRecord{Name: p.Name, Version: p.Version, SHA256: p.SHA256, Files: mergeFiles(prev.Files, written), Shortcuts: shortcutsOf(p), Date: time.Now().Format("2 Jan 2006")}
+			recs[p.key()] = portRecord{Name: p.Name, Version: p.Version, SHA256: p.SHA256, Files: mergeFiles(prevFiles, written), Shortcuts: shortcutsOf(p), Date: time.Now().Format("2 Jan 2006")}
 			savePortRecords(recs)
 			return nil, fmt.Errorf("unpacking %s: %w", path.Base(e.rel), err)
 		}
@@ -721,7 +803,7 @@ func (pp *pendingPort) Install(progress func(done, total int64)) ([]PortGame, er
 	for _, f := range written {
 		now[strings.ToLower(f)] = true
 	}
-	for _, f := range prev.Files {
+	for _, f := range prevFiles {
 		if !now[strings.ToLower(f)] {
 			removePortFile(f)
 		}
@@ -844,7 +926,7 @@ func RemovePort(p Port) error {
 		return errors.New("it wasn't installed by MiniMart")
 	}
 	// Deepest first, so folders empty out before their parents are tried.
-	files := append([]string(nil), r.Files...)
+	files := portFiles(p.key())
 	sort.Slice(files, func(i, j int) bool { return strings.Count(files[i], "/") > strings.Count(files[j], "/") })
 	for _, f := range files {
 		removePortFile(f)
@@ -856,7 +938,11 @@ func RemovePort(p Port) error {
 	}
 	delete(recs, p.key())
 	resetPortsList()
-	return savePortRecords(recs)
+	if err := savePortRecords(recs); err != nil {
+		return err
+	}
+	os.Remove(portFilesPath(p.key()))
+	return nil
 }
 
 // userFilesLeft lists the files left in the port's game folders after it

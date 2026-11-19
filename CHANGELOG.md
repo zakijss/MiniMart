@@ -20,6 +20,9 @@ All notable changes are listed here. The format follows
 - A port may hold up to 50,000 files (Endless Sky has over 22,000), and `tools/catalog` fetches zips up to 1 GB.
 - A port's or game's download needs room for itself only; the port's page already checks the room the whole install takes. Icon packs, unpacked beside their zip, still need three times their size.
 - Built with MiniDeck 1.3.0, for its minisign checks.
+- Versions with a pre-release part order as semver does: 1.0.0-rc1 < 1.0.0-rc2 < 1.0.0-rc10 < 1.0.0 (the part after "-" was ignored).
+- The installed ports' records are read once, and each port's list of files is kept in its own file, read only to update or remove it: the Ports screen no longer reads a big game's list of over 22,000 files at every redraw. Older records are moved over the first time.
+- `tools/catalog`: the owner's own repositories are left out of the community apps (their apps are MiniDeck's), and repositories excluded by the owner are left out of every list.
 - The built-in ports list and community apps list are regenerated.
 
 ## [1.5.1] - 2026-11-19

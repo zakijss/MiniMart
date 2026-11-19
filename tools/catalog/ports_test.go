@@ -1,7 +1,10 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -132,5 +135,21 @@ func TestPortsOwn(t *testing.T) {
 		if !p.Signed || githubRepoRe.FindStringSubmatch(p.Upstream) == nil || portPath(p.VersionFile) == "" {
 			t.Errorf("%s: %+v", p.Name, p)
 		}
+	}
+}
+
+func TestOwnerSkipsAndOwnRepos(t *testing.T) {
+	h := sha256.Sum256([]byte("someone/skipped"))
+	ownerSkips[hex.EncodeToString(h[:])] = true
+	defer delete(ownerSkips, hex.EncodeToString(h[:]))
+	g := &gen{}
+	if _, err := g.repoApps("Someone/Skipped"); !errors.Is(err, errOwnerSkip) {
+		t.Fatalf("skipped repository: %v", err)
+	}
+	if _, err := g.repoApps("ZakiJSS/MiniDeck"); err == nil || !strings.Contains(err.Error(), "owner's own") {
+		t.Fatalf("own repository: %v", err)
+	}
+	if ownerSkipped("someone/else") || ownRepo("zakijss-fan/x") {
+		t.Fatal("too broad")
 	}
 }

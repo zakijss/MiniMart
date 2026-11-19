@@ -177,12 +177,16 @@ func (a App) InstalledVersion() string {
 }
 
 // versionLess reports whether version a is older than b, comparing the
-// dot-separated numbers ("1.10.0" is newer than "1.9.2"); anything after
-// the numbers ("-rc1") is ignored.
+// dot-separated numbers ("1.10.0" is newer than "1.9.2"), then the
+// pre-release part after "-" as semver does, with the number in each part
+// compared as a number: 1.0.0-rc1 < 1.0.0-rc2 < 1.0.0-rc10 < 1.0.0.
 func versionLess(a, b string) bool {
-	nums := func(s string) []int {
+	split := func(s string) ([]int, string) {
+		s = strings.TrimPrefix(strings.ToLower(strings.TrimSpace(s)), "v")
+		s, _, _ = strings.Cut(s, "+") // build metadata doesn't order
+		s, pre, _ := strings.Cut(s, "-")
 		var n []int
-		for _, p := range strings.Split(strings.TrimPrefix(strings.ToLower(s), "v"), ".") {
+		for _, p := range strings.Split(s, ".") {
 			d := 0
 			i := 0
 			for ; i < len(p) && p[i] >= '0' && p[i] <= '9' && i < 9; i++ {
@@ -193,9 +197,10 @@ func versionLess(a, b string) bool {
 				break
 			}
 		}
-		return n
+		return n, pre
 	}
-	x, y := nums(a), nums(b)
+	x, xp := split(a)
+	y, yp := split(b)
 	for i := 0; i < len(x) || i < len(y); i++ {
 		var p, q int
 		if i < len(x) {
@@ -208,7 +213,40 @@ func versionLess(a, b string) bool {
 			return p < q
 		}
 	}
-	return false
+	switch {
+	case xp == yp || xp == "":
+		return false
+	case yp == "":
+		return true
+	}
+	xs, ys := strings.Split(xp, "."), strings.Split(yp, ".")
+	for i := 0; i < len(xs) && i < len(ys); i++ {
+		if c := preCompare(xs[i], ys[i]); c != 0 {
+			return c < 0
+		}
+	}
+	return len(xs) < len(ys)
+}
+
+// preCompare orders two parts of a pre-release ("rc1", "beta", "2"): by
+// the text before their trailing digits, then by those digits as a number.
+func preCompare(a, b string) int {
+	cut := func(s string) (string, string) {
+		i := len(s)
+		for i > 0 && s[i-1] >= '0' && s[i-1] <= '9' {
+			i--
+		}
+		return s[:i], strings.TrimLeft(s[i:], "0")
+	}
+	at, an := cut(a)
+	bt, bn := cut(b)
+	if c := strings.Compare(at, bt); c != 0 {
+		return c
+	}
+	if len(an) != len(bn) {
+		return len(an) - len(bn)
+	}
+	return strings.Compare(an, bn)
 }
 
 // Manifest returns where the app's release zip is and its checksum: from

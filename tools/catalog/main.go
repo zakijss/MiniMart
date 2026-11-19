@@ -219,6 +219,9 @@ func main() {
 	var all []App
 	for _, r := range repos {
 		apps, err := g.repoApps(r)
+		if errors.Is(err, errOwnerSkip) {
+			continue
+		}
 		if err != nil {
 			g.scan.Skipped[r] = err.Error()
 			log.Printf("%s: %v", r, err)
@@ -306,6 +309,25 @@ func (g *gen) loadPrev(catFile, scanFile string) {
 		}
 	}
 }
+
+// ownerSkips are repositories excluded by the owner, as the SHA-256 of
+// "owner/repo" in lower case: they are left out of every list, and out of
+// scan.json, without their names being kept here.
+var ownerSkips = map[string]bool{
+	"b0b692b99040db343f0a45cb020a1a3db5021eb815b85093d94b95f84a016c91": true,
+	"a1d5eba60169f42709cdebaa43079b29b964b409abc2fcb463bb6063906e7daa": true,
+}
+
+var errOwnerSkip = errors.New("excluded by the owner")
+
+func ownerSkipped(name string) bool {
+	h := sha256.Sum256([]byte(strings.ToLower(name)))
+	return ownerSkips[hex.EncodeToString(h[:])]
+}
+
+// ownRepo: the owner's repositories. Their apps are MiniDeck's (its own
+// catalogue) and their games are in ports-own.json, not community apps.
+func ownRepo(name string) bool { return strings.HasPrefix(strings.ToLower(name), "zakijss/") }
 
 // repoRe is an owner/repo name.
 var repoRe = regexp.MustCompile(`^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`)
@@ -411,6 +433,12 @@ func (g *gen) repoApps(name string) ([]App, error) {
 	if !repoRe.MatchString(name) {
 		return nil, errors.New("not an owner/repo name")
 	}
+	if ownerSkipped(name) {
+		return nil, errOwnerSkip
+	}
+	if ownRepo(name) {
+		return nil, errors.New("the owner's own repository: not a community app")
+	}
 	if why, ok := g.excluded(name); ok {
 		return nil, errors.New("excluded: " + why)
 	}
@@ -422,6 +450,12 @@ func (g *gen) repoApps(name string) ([]App, error) {
 		}
 	}
 	if info.FullName != "" && info.FullName != name {
+		if ownerSkipped(info.FullName) {
+			return nil, errOwnerSkip
+		}
+		if ownRepo(info.FullName) {
+			return nil, errors.New("the owner's own repository: not a community app")
+		}
 		if why, ok := g.excluded(info.FullName); ok {
 			return nil, errors.New("excluded: " + why)
 		}
