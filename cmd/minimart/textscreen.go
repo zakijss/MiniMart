@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	"strings"
 
@@ -15,13 +16,23 @@ type row struct {
 	text   string
 	face   font.Face
 	col    color.Color
-	gap    int    // space above
-	indent int    // from the left edge
-	bullet bool   // a bullet before the text
-	label  string // a label in the left column (see kv)
+	gap    int         // space above
+	indent int         // from the left edge
+	bullet bool        // a bullet before the text
+	label  string      // a label in the left column (see kv)
+	pic    image.Image // a picture centred on the screen in place of text (see picRow)
+	picH   int         // with no pic: an empty box this tall while it loads
 }
 
-func (r row) height() int { return r.gap + ui.LineHeight(r.face) }
+func (r row) height() int {
+	switch {
+	case r.pic != nil:
+		return r.gap + r.pic.Bounds().Dy()
+	case r.picH > 0:
+		return r.gap + r.picH
+	}
+	return r.gap + ui.LineHeight(r.face)
+}
 
 // wrap is ui.Wrap, with a word too long for a line (a repository's
 // address, a path) broken after a '/' or '-', or wherever it must.
@@ -124,6 +135,11 @@ func drawRows(sc *ui.Screen, rs []row, off, x, top, bottom int) int {
 			break
 		}
 		y += gap
+		if r.pic != nil || r.picH > 0 {
+			drawPicRow(sc, r, y)
+			y += h
+			continue
+		}
 		if r.label != "" {
 			// small capitals, centred on the value's first line
 			ly := y + (ui.LineHeight(r.face)-ui.LineHeight(ui.Caps))/4*2
@@ -177,3 +193,19 @@ func (s *store) textScreen(title, sub string, rs []row, yes string) bool {
 		}
 	}
 }
+
+// drawPicRow draws a picture row at y, or the box it loads into.
+func drawPicRow(sc *ui.Screen, r row, y int) {
+	if r.pic == nil {
+		box := image.Rect(ui.W/2-picW/2, y, ui.W/2+picW/2, y+r.picH)
+		sc.Panel(box, 12)
+		sc.Loading(y+r.picH/2-12, "Picture")
+		return
+	}
+	b := r.pic.Bounds()
+	x := ui.W/2 - b.Dx()/2
+	sc.RoundPicture(r.pic, image.Rect(x, y, x+b.Dx(), y+b.Dy()), 12)
+}
+
+// The largest a details picture is drawn.
+const picW, picH = 320, 240

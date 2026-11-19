@@ -365,6 +365,17 @@ func decodePreview(b []byte) (image.Image, error) {
 	return img, err
 }
 
+// Fit scales img to fit inside w x h, keeping its shape (nothing cropped).
+func Fit(img image.Image, w, h int) image.Image {
+	b := img.Bounds()
+	if b.Dx()*h > b.Dy()*w {
+		h = max(1, b.Dy()*w/b.Dx())
+	} else {
+		w = max(1, b.Dx()*h/b.Dy())
+	}
+	return Thumb(img, w, h)
+}
+
 // Thumb scales img to w x h, cropping to fill.
 func Thumb(img image.Image, w, h int) image.Image {
 	b := img.Bounds()

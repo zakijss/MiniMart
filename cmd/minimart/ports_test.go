@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"image"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -612,5 +613,20 @@ func TestPortRecordsIndex(t *testing.T) {
 	}
 	if len(loadPortRecords()) != 0 || exists(portFilesPath("a/g#G")) {
 		t.Fatal("record or file list left after removal")
+	}
+}
+
+func TestFitKeepsShape(t *testing.T) {
+	for _, c := range []struct{ w, h, ww, wh int }{
+		{640, 480, 320, 240}, // a 4:3 screenshot fills the box
+		{460, 215, 320, 149}, // a wide banner keeps its width
+		{250, 328, 182, 240}, // a tall cover keeps its height
+		{100, 50, 320, 160},  // a small picture grows to fit
+		{5000, 1, 320, 1},    // never less than a pixel
+	} {
+		b := Fit(image.NewRGBA(image.Rect(0, 0, c.w, c.h)), picW, picH).Bounds()
+		if b.Dx() != c.ww || b.Dy() != c.wh {
+			t.Errorf("%dx%d: got %dx%d, want %dx%d", c.w, c.h, b.Dx(), b.Dy(), c.ww, c.wh)
+		}
 	}
 }

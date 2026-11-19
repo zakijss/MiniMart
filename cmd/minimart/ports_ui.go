@@ -165,12 +165,42 @@ func (s *store) portDetail(p Port) {
 	msg := ""
 	off := 0
 	w := ui.W - 56
+	// The picture (a screenshot or cover from the ports list) loads in the background; a
+	// port without one, or whose picture fails, has no box.
+	var pic image.Image
+	picWait := p.Image != ""
+	if picWait {
+		go func() {
+			var img image.Image
+			if b, err := s.f.cached(p.Image, false); err == nil {
+				if d, err := decodePreview(b); err == nil {
+					img = Fit(d, picW, picH)
+				}
+			}
+			s.mu.Lock()
+			pic, picWait = img, false
+			s.mu.Unlock()
+			s.redraw()
+		}()
+	}
 	for {
 		syncShortcuts(p)
 		st := p.State(loadPortRecords())
 		var rs []row
+		s.mu.Lock()
+		switch {
+		case pic != nil:
+			rs = append(rs, row{pic: pic})
+		case picWait:
+			rs = append(rs, row{picH: picH})
+		}
+		s.mu.Unlock()
+		gap := 0
+		if len(rs) > 0 {
+			gap = 14
+		}
 		if p.Notes != "" {
-			rs = append(rs, para(p.Notes, ui.Body, ui.Text, 0, w)...)
+			rs = append(rs, para(p.Notes, ui.Body, ui.Text, gap, w)...)
 		}
 		switch {
 		case p.App != "":
@@ -182,7 +212,7 @@ func (s *store) portDetail(p Port) {
 		default:
 			rs = append(rs, para("Free game: everything it needs comes with it.", ui.Small, ui.Accent, 8, w)...)
 		}
-		gap := 12
+		gap = 12
 		add := func(label, value string, warn bool) {
 			c := ui.Text
 			if warn {
