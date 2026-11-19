@@ -492,3 +492,85 @@ func TestPortStress(t *testing.T) {
 		t.Fatalf("over the limit: %v", err)
 	}
 }
+
+// signedPort serves testdata/signed-port.zip, signed with the throwaway
+// key in testdata/test.pub (or zip z in its place, pinned), and its
+// signature (sig, or none if nil).
+func signedPort(t *testing.T, z, sig []byte) (Port, *fetcher) {
+	t.Helper()
+	key, err := os.ReadFile("testdata/test.pub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := releaseKey
+	releaseKey = string(key)
+	t.Cleanup(func() { releaseKey = old })
+	if z == nil {
+		if z, err = os.ReadFile("testdata/signed-port.zip"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	files := map[string][]byte{"/signed.zip": z}
+	if sig != nil {
+		files["/signed.zip.minisig"] = sig
+	}
+	srv, f := portServer(t, files)
+	return Port{Name: "Signed", Assets: "free", Repo: "zakijss/Signed", Version: "1.0", Zip: srv.URL + "/signed.zip", SHA256: sumOf(z), Size: int64(len(z)), Unpacked: 100,
+		Root: "Roms/PORTS/", Signed: true, VersionFile: "Games/Signed/version.txt",
+		Games: []PortGame{{Shortcut: "RPG/Signed", Dir: "Signed", Data: "signed", Shipped: true}}}, f
+}
+
+func TestPortSigned(t *testing.T) {
+	good, err := os.ReadFile("testdata/signed-port.zip.minisig")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("verified", func(t *testing.T) {
+		sd := portCard(t)
+		p, f := signedPort(t, nil, good)
+		if _, err := installPortT(t, f, p); err != nil {
+			t.Fatal(err)
+		}
+		if !exists(filepath.Join(sd, "Roms/PORTS/Shortcuts/RPG/Signed.port")) {
+			t.Fatal("not installed")
+		}
+		// the game updated itself to 1.2: 1.1 is no update
+		os.WriteFile(filepath.Join(sd, "Roms/PORTS/Games/Signed/version.txt"), []byte("1.2\n"), 0o644)
+		if st := p.State(loadPortRecords()); st.Version != "1.2" {
+			t.Fatalf("installed version %q", st.Version)
+		}
+		if newerPort("1.2", "1.1") || !newerPort("1.2", "1.3") || newerPort("v1.2", "1.2") {
+			t.Fatal("newerPort")
+		}
+	})
+	bad := bytes.Replace(good, []byte("\ntrusted comment: "), []byte("\ntrusted comment: x"), 1)
+	if bytes.Equal(bad, good) {
+		t.Fatal("no trusted comment")
+	}
+	other := portZip(t, [2]string{"Roms/PORTS/Games/Signed/signed", "evil"}, [2]string{"Roms/PORTS/Shortcuts/RPG/Signed.port", "x"})
+	for name, c := range map[string]struct{ zip, sig []byte }{
+		"another zip":     {other, good},
+		"comment changed": {nil, bad},
+		"not a signature": {nil, []byte("<html>")},
+		"missing":         {nil, nil},
+	} {
+		t.Run(name, func(t *testing.T) {
+			sd := portCard(t)
+			p, f := signedPort(t, c.zip, c.sig)
+			if _, err := installPortT(t, f, p); err == nil || !strings.Contains(err.Error(), "signature") {
+				t.Fatalf("installed: %v", err)
+			}
+			if ents, _ := os.ReadDir(filepath.Join(sd, "Roms/PORTS/Shortcuts")); len(ents) != 0 {
+				t.Fatal("files written")
+			}
+			if ents, _ := os.ReadDir(stagingDir()); len(ents) != 0 {
+				t.Fatal("download left behind")
+			}
+			for _, d := range []string{"Games", "Imgs"} {
+				if exists(filepath.Join(sd, "Roms/PORTS", d)) {
+					t.Fatalf("%s written", d)
+				}
+			}
+		})
+	}
+}

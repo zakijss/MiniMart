@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Endless Sky",
+    "categories": ["space", "trading"],
+    "status": "playable",
+    "assets": "free",
+    "upstream": "https://github.com/zakijss/EndlessSky/releases",
+    "image": "",
+    "notes": "The full space trading and combat game, with a software renderer, 640x480 layouts and button controls. It also updates itself from its releases.",
+    "porter": ["ZJSS"],
+    "signed": true,
+    "versionfile": "Games/Endless Sky/port-version.txt"
+  },
+  {
+    "name": "Armiger",
+    "categories": ["rpg"],
+    "status": "playable",
+    "assets": "free",
+    "upstream": "https://github.com/zakijss/Armiger/releases",
+    "image": "",
+    "notes": "An open-world heraldry RPG: your arms shape the story and the world. Closed source, free to play. It updates itself over Wi-Fi.",
+    "porter": ["ZJSS"],
+    "license": "Freeware (free to play, not open source)",
+    "signed": true,
+    "versionfile": "Games/Armiger/version.txt"
+  }
+]

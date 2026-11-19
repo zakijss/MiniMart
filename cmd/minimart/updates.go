@@ -85,10 +85,11 @@ func (f *fetcher) findUpdates(ss []Source) ([]update, []error) {
 	for i := range ports {
 		p := ports[i]
 		r, ok := recs[p.key()]
-		if !ok || !p.Installable() || sameVersion(r.Version, p.Version) {
+		have := portVersion(r.Version, p.VersionFile)
+		if !ok || !p.Installable() || !newerPort(have, p.Version) {
 			continue
 		}
-		out = append(out, update{Kind: "Port", Name: p.Name, Installed: r.Version, Available: p.Version, port: &p, size: p.Size})
+		out = append(out, update{Kind: "Port", Name: p.Name, Installed: have, Available: p.Version, port: &p, size: p.Size})
 	}
 	// MiniDeck's apps first, then community apps, then ports; MiniMart
 	// itself last, so Update all finishes the others with the running copy.

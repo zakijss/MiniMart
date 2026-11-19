@@ -162,7 +162,7 @@ func (c *client) raw(u string) ([]byte, error) {
 }
 
 // maxDownload is the largest zip the tool fetches.
-const maxDownload = 400 << 20
+const maxDownload = 1 << 30 // the store's limit for a port (Endless Sky is 376 MB)
 
 // download saves u to dst (kept: a pinned release or commit never changes)
 // and returns its size and SHA-256.

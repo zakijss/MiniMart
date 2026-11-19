@@ -163,7 +163,13 @@ func main() {
 		if err := readMap(filepath.Join(*dir, "ports-exclude.json"), &pex); err != nil {
 			log.Fatal(err)
 		}
-		doc, err := g.buildPorts(*portsList, pex)
+		var own []Port
+		if b, err := os.ReadFile(filepath.Join(*dir, "ports-own.json")); err != nil {
+			log.Fatal(err)
+		} else if err := json.Unmarshal(b, &own); err != nil {
+			log.Fatalf("ports-own.json: %v", err)
+		}
+		doc, err := g.buildPorts(*portsList, pex, own)
 		if err != nil {
 			log.Fatal(err)
 		}

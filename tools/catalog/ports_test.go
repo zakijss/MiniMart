@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 )
@@ -106,5 +108,29 @@ func TestPortZips(t *testing.T) {
 	}
 	if strings.Join(names, ",") != "game-OnionOS.zip,game-miyoo.zip,game.zip" {
 		t.Fatal(names)
+	}
+}
+
+func TestSignedZips(t *testing.T) {
+	as := []asset{{Name: "EndlessSky-Miyoo-1.5.zip"}, {Name: "EndlessSky-Miyoo-1.5.zip.minisig"}, {Name: "other.zip"}, {Name: "other.minisig"}}
+	got := signedZips(portZips(as), as)
+	if len(got) != 1 || got[0].Name != "EndlessSky-Miyoo-1.5.zip" {
+		t.Fatal(got)
+	}
+}
+
+func TestPortsOwn(t *testing.T) {
+	b, err := os.ReadFile("ports-own.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var own []Port
+	if err := json.Unmarshal(b, &own); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range own {
+		if !p.Signed || githubRepoRe.FindStringSubmatch(p.Upstream) == nil || portPath(p.VersionFile) == "" {
+			t.Errorf("%s: %+v", p.Name, p)
+		}
 	}
 }

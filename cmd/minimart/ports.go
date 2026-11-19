@@ -36,6 +36,7 @@ import (
 
 	"github.com/zakijss/minideck/appdir"
 	"github.com/zakijss/minideck/atomicfile"
+	"github.com/zakijss/minideck/sign"
 )
 
 // Port is one entry of a ports list. The first fields are the
@@ -70,6 +71,13 @@ type Port struct {
 	App string `json:"app,omitempty"`
 	// Why the port can't be installed from the store, when it can't.
 	Why string `json:"why,omitempty"`
+	// Signed: the owner's own game, signed with the release key
+	// (sign.ReleaseKey). Its zip installs only if <Zip>.minisig, from the
+	// same release, verifies.
+	Signed bool `json:"signed,omitempty"`
+	// VersionFile: for a game that updates itself, the file under
+	// Roms/PORTS that holds the version on the card ("Games/X/version.txt").
+	VersionFile string `json:"versionfile,omitempty"`
 
 	Source string `json:"-"`
 }
@@ -253,9 +261,12 @@ func (f *fetcher) Ports(ss []Source) ([]Port, error) {
 	if len(out) == 0 {
 		return nil, firstErr
 	}
-	// Ports that install from here first, then apps, then the guide.
+	// The owner's signed games first, in the list's order; then ports that
+	// install from here, then apps, then the guide.
 	group := func(p Port) int {
 		switch {
+		case p.Signed:
+			return -1
 		case p.Installable():
 			return 0
 		case p.App != "":
@@ -264,7 +275,7 @@ func (f *fetcher) Ports(ss []Source) ([]Port, error) {
 		return 2
 	}
 	sort.SliceStable(out, func(i, j int) bool {
-		if gi, gj := group(out[i]), group(out[j]); gi != gj {
+		if gi, gj := group(out[i]), group(out[j]); gi != gj || gi < 0 {
 			return gi < gj
 		}
 		return strings.ToLower(out[i].Name) < strings.ToLower(out[j].Name)
@@ -341,7 +352,7 @@ func (st PortState) Ready() bool {
 func (p Port) State(recs map[string]portRecord) PortState {
 	var st PortState
 	if r, ok := recs[p.key()]; ok {
-		st.Installed, st.Version = true, r.Version
+		st.Installed, st.Version = true, portVersion(r.Version, p.VersionFile)
 	}
 	for _, g := range p.Games {
 		f, _ := shortcutFile(g.Shortcut)
@@ -359,6 +370,29 @@ func (p Port) State(recs map[string]portRecord) PortState {
 		}
 	}
 	return st
+}
+
+// portVersion is the installed version: the store's record or, for a game
+// that updates itself, the version in its versionFile, whichever is newer.
+func portVersion(rec, versionFile string) string {
+	rel := portPath(versionFile)
+	if rel == "" {
+		return rec
+	}
+	b, err := os.ReadFile(filepath.Join(portsDir(), filepath.FromSlash(rel)))
+	file := strings.TrimPrefix(strings.TrimSpace(string(b)), "v")
+	if err != nil || !versionRe.MatchString(file) {
+		return rec
+	}
+	if rec == "" || versionLess(rec, file) {
+		return file
+	}
+	return rec
+}
+
+// newerPort reports whether avail is an update for the installed version.
+func newerPort(have, avail string) bool {
+	return !sameVersion(have, avail) && !versionLess(avail, have)
 }
 
 // gameDataPresent is Onion's check (Emu/PORTS/import.sh): a file named
@@ -463,7 +497,7 @@ func resetPortsList() {
 // Limits on a port's zip, checked against its directory before anything
 // is unpacked.
 const (
-	maxPortFiles    = 20000
+	maxPortFiles    = 50000
 	maxPortUnpacked = 2 << 30
 	maxPortFile     = 1 << 30
 	maxPortDownload = 1 << 30
@@ -557,6 +591,17 @@ func (f *fetcher) DownloadPort(p Port, progress func(done, total int64)) (*pendi
 	if err := os.MkdirAll(stagingDir(), 0755); err != nil {
 		return nil, err
 	}
+	// The signature first: a signed port without one isn't downloaded.
+	var sig sign.Signature
+	if p.Signed {
+		b, err := f.get(p.Zip + ".minisig")
+		if err == nil {
+			sig, err = sign.ParseSignature(b)
+		}
+		if err != nil {
+			return nil, fmt.Errorf("its release has no usable signature (%v): not installed", err)
+		}
+	}
 	tmp := filepath.Join(stagingDir(), "port-"+slugify(p.Name)+".zip")
 	if err := f.fetchTo(p.Zip, tmp, maxPortDownload, progress); err != nil {
 		return nil, err
@@ -568,6 +613,11 @@ func (f *fetcher) DownloadPort(p Port, progress func(done, total int64)) (*pendi
 	}
 	if !strings.EqualFold(sum, p.SHA256) {
 		return fail(errors.New("the download doesn't match the checksum in the ports list: not installed"))
+	}
+	if p.Signed {
+		if err := verifyFile(tmp, sig); err != nil {
+			return fail(fmt.Errorf("the download's signature doesn't check out (%v): not installed", err))
+		}
 	}
 	zr, err := zip.OpenReader(tmp)
 	if err != nil {
@@ -593,6 +643,24 @@ func (f *fetcher) DownloadPort(p Port, progress func(done, total int64)) (*pendi
 		}
 	}
 	return pp, nil
+}
+
+// releaseKey checks signed ports; tests use their own.
+var releaseKey = sign.ReleaseKey
+
+// verifyFile checks a file against a signature by the release key.
+func verifyFile(name string, sig sign.Signature) error {
+	key, err := sign.ParsePublicKey(releaseKey)
+	if err != nil {
+		return err
+	}
+	fh, err := os.Open(name)
+	if err != nil {
+		return err
+	}
+	defer fh.Close()
+	_, err = sign.Verify(key, sig, fh)
+	return err
 }
 
 func portsDirOrCard() string {

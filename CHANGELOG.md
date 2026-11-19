@@ -6,6 +6,22 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-19
+
+### Added
+
+- Ports lists the owner's own games first: Endless Sky, then Armiger once its repository has a release. Their rows say "By ZJSS · signed".
+- Signed ports: an entry marked `signed` installs or updates only if its zip's minisign signature (`X.minisig` in the same release) verifies with the owner's release key. It is checked after the SHA-256 and before anything is unpacked; a missing or bad signature refuses the install and writes nothing.
+- A port that updates itself names the file holding its version (`versionfile`). Updates takes the newer of that and MiniMart's own record, so an update the game already applied isn't offered again, and an older release is never offered as an update.
+- `tools/catalog`: `ports-own.json` lists the owner's games. A signed entry is pinned only to a release zip that has its `.minisig`; an entry whose repository doesn't exist yet is left out.
+
+### Changed
+
+- A port may hold up to 50,000 files (Endless Sky has over 22,000), and `tools/catalog` fetches zips up to 1 GB.
+- A port's or game's download needs room for itself only; the port's page already checks the room the whole install takes. Icon packs, unpacked beside their zip, still need three times their size.
+- Built with MiniDeck 1.3.0, for its minisign checks.
+- The built-in ports list and community apps list are regenerated.
+
 ## [1.5.1] - 2026-11-19
 
 ### Fixed
@@ -99,7 +115,8 @@ All notable changes are listed here. The format follows
 - The community apps list is built by `tools/catalog` from GitHub and published every day on the `catalog` release; MiniMart falls back to the copy built into it.
 - Ports that need your own game file: MiniMart finds a matching copy on the card or in your own game files folder, or lets you pick one, and copies it into place. It never downloads game data.
 
-[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.5.1...HEAD
+[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/zakijss/MiniMart/compare/v1.5.1...v1.6.0
 [1.5.1]: https://github.com/zakijss/MiniMart/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/zakijss/MiniMart/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/zakijss/MiniMart/compare/v1.4.0...v1.4.1

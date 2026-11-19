@@ -94,6 +94,9 @@ func (s *store) ports() {
 // portLine is a port's second line and right-hand state in the list.
 func portLine(p Port, st PortState) (sub, detail string) {
 	var parts []string
+	if p.Signed {
+		parts = append(parts, signedText)
+	}
 	switch {
 	case p.App != "":
 		parts = append(parts, "App: installs from Apps")
@@ -126,6 +129,9 @@ func portLine(p Port, st PortState) (sub, detail string) {
 	}
 	return strings.Join(parts, " · "), detail
 }
+
+// signedText marks the owner's signed games.
+const signedText = "By ZJSS · signed"
 
 // stateText says what is on the card for the port.
 func stateText(p Port, st PortState) (string, bool) {
@@ -204,6 +210,9 @@ func (s *store) portDetail(p Port) {
 				add("Licence", p.License, false)
 			}
 		}
+		if p.Signed {
+			add("Signed", "Signed by ZJSS: installed only if the signature checks out", false)
+		}
 		if p.Repo != "" {
 			add("Repository", "github.com/"+p.Repo, false)
 		} else {
@@ -215,7 +224,7 @@ func (s *store) portDetail(p Port) {
 		if p.Status != "" {
 			add("Status", p.Status, false)
 		}
-		if p.Installable() {
+		if p.Installable() && !p.Signed {
 			rs = append(rs, para("Not reviewed by MiniDeck: read its repository before installing.", ui.Small, ui.Muted, 10, w)...)
 		}
 		if msg != "" {
@@ -348,7 +357,13 @@ func (s *store) installPort(p Port, st PortState) string {
 		return t
 	}
 	rs = append(rs, spaceRows(portNeeds(p), 6, w)...)
-	rs = append(rs, para("Not reviewed by MiniDeck. It runs with full access to the device, like any port. The download is installed only if it matches the checksum in the ports list.", ui.Small, ui.Muted, 12, w)...)
+	checked := "checksum"
+	if p.Signed {
+		checked = "checksum and signature"
+		rs = append(rs, para("Signed by ZJSS. The download is installed only if it matches the checksum in the ports list and the signature in its release.", ui.Small, ui.Muted, 12, w)...)
+	} else {
+		rs = append(rs, para("Not reviewed by MiniDeck. It runs with full access to the device, like any port. The download is installed only if it matches the checksum in the ports list.", ui.Small, ui.Muted, 12, w)...)
+	}
 	if p.needsOwnFiles() {
 		rs = append(rs, para("You need your own copy of the game: MiniMart installs only the port.", ui.Small, ui.Warn, 8, w)...)
 	}
@@ -386,10 +401,10 @@ func (s *store) installPort(p Port, st PortState) string {
 	}
 	if len(missing) == 0 {
 		if st := p.State(loadPortRecords()); len(st.Unchecked) > 0 {
-			s.scr.Notice(s.input, "Port installed", fmt.Sprintf("%s %s is installed and matched its checksum. Copy your own game files into Roms/PORTS/Games/%s/ as its notes say, then play it from Onion's Ports list.", p.Name, versionLabel(p.Version), st.Unchecked[0].Dir))
+			s.scr.Notice(s.input, "Port installed", fmt.Sprintf("%s %s is installed and matched its %s. Copy your own game files into Roms/PORTS/Games/%s/ as its notes say, then play it from Onion's Ports list.", p.Name, versionLabel(p.Version), checked, st.Unchecked[0].Dir))
 			return ""
 		}
-		s.scr.Notice(s.input, "Installed", p.Name+" "+versionLabel(p.Version)+" is installed and matched its checksum. Play it from Onion's Ports list.")
+		s.scr.Notice(s.input, "Installed", p.Name+" "+versionLabel(p.Version)+" is installed and matched its "+checked+". Play it from Onion's Ports list.")
 		return ""
 	}
 	if !p.needsOwnFiles() {

@@ -23,11 +23,13 @@ import (
 const checkEvery = 20 * time.Hour
 
 type noteItem struct {
-	Kind      string `json:"kind"`
-	Name      string `json:"name"`
-	Folder    string `json:"folder,omitempty"` // an app's
-	Port      string `json:"port,omitempty"`   // a port's key
-	Available string `json:"available"`
+	Kind   string `json:"kind"`
+	Name   string `json:"name"`
+	Folder string `json:"folder,omitempty"` // an app's
+	Port   string `json:"port,omitempty"`   // a port's key
+	// VersionFile: the port's (Port.VersionFile), for a game that updates itself
+	VersionFile string `json:"versionfile,omitempty"`
+	Available   string `json:"available"`
 }
 
 // updateNote is what the last check found.
@@ -54,7 +56,7 @@ func saveNote(ups []update, at time.Time) error {
 		if u.app != nil {
 			it.Folder = u.app.Folder
 		} else {
-			it.Port = u.port.key()
+			it.Port, it.VersionFile = u.port.key(), u.port.VersionFile
 		}
 		n.Items = append(n.Items, it)
 	}
@@ -80,7 +82,7 @@ func (n updateNote) pending() int {
 				c++
 			}
 		case it.Port != "":
-			if r, ok := recs[it.Port]; ok && !sameVersion(r.Version, it.Available) {
+			if r, ok := recs[it.Port]; ok && newerPort(portVersion(r.Version, it.VersionFile), it.Available) {
 				c++
 			}
 		}

@@ -12,6 +12,13 @@ package main
 // reads them, so the store can tell when a game's files are in place.
 // The tool never adds game data: a port of a commercial game stays an
 // engine that needs the user's own copy.
+//
+// ports-own.json lists the owner's own games, in the same format plus
+// "signed" (and "versionfile" for a game that updates itself); they go
+// first, in that order. A signed entry is pinned only to a release zip X
+// with X.minisig beside it, and its "license" is kept when the entry
+// gives one (a closed game's repository has no licence file). An own
+// entry whose repository doesn't exist yet is left out.
 
 import (
 	"archive/zip"
@@ -52,6 +59,9 @@ type Port struct {
 	Games    []PortGame `json:"games,omitempty"`
 	App      string     `json:"app,omitempty"`
 	Why      string     `json:"why,omitempty"`
+	// Signed and VersionFile: see the store's Port and ports-own.json.
+	Signed      bool   `json:"signed,omitempty"`
+	VersionFile string `json:"versionfile,omitempty"`
 }
 
 // PortGame is one game a port's shortcut launches.
@@ -100,8 +110,11 @@ func portPath(rel string) string {
 	return strings.Join(segs, "/")
 }
 
-// buildPorts makes the ports list from the list at listURL.
-func (g *gen) buildPorts(listURL string, exclude map[string]string) (PortsDoc, error) {
+// errNoRepo: the port's repository is gone, private or not made yet.
+var errNoRepo = errors.New("its repository is gone or private")
+
+// buildPorts makes the ports list from own, then the list at listURL.
+func (g *gen) buildPorts(listURL string, exclude map[string]string, own []Port) (PortsDoc, error) {
 	b, err := g.c.raw(listURL)
 	if err != nil {
 		return PortsDoc{}, fmt.Errorf("the ports list: %w", err)
@@ -113,12 +126,22 @@ func (g *gen) buildPorts(listURL string, exclude map[string]string) (PortsDoc, e
 		return PortsDoc{}, fmt.Errorf("the ports list: %w", err)
 	}
 	out := PortsDoc{Name: "MiyooMini Ports", Generated: g.today, From: listURL}
-	for _, p := range doc.Ports {
-		p.Repo, p.License, p.Version, p.Released, p.Zip, p.SHA256 = "", "", "", "", "", ""
+	for i, p := range append(own, doc.Ports...) {
+		mine := i < len(own)
+		licence := ""
+		if mine {
+			licence = p.License
+		} else {
+			p.Signed, p.VersionFile = false, ""
+		}
+		p.Repo, p.License, p.Version, p.Released, p.Zip, p.SHA256 = "", licence, "", "", "", ""
 		p.Size, p.Unpacked, p.Root, p.Loose, p.Games, p.App, p.Why = 0, 0, "", false, nil, "", ""
 		if why, ok := exclude[p.Name]; ok {
 			p.Why = why
-		} else if err := g.pinPort(&p); err != nil {
+		} else if err := g.pinPort(&p); mine && errors.Is(err, errNoRepo) {
+			log.Printf("port %s: %v: left out", p.Name, err)
+			continue
+		} else if err != nil {
 			p.Why = err.Error()
 		}
 		if p.Why != "" {
@@ -139,7 +162,7 @@ func (g *gen) pinPort(p *Port) error {
 	info, err := g.c.repo(name)
 	if err != nil {
 		if isNotFound(err) {
-			return errors.New("its repository is gone or private")
+			return errNoRepo
 		}
 		return err
 	}
@@ -150,6 +173,7 @@ func (g *gen) pinPort(p *Port) error {
 	}
 	sort.SliceStable(rels, func(i, j int) bool { return rels[i].Published > rels[j].Published })
 	var app *Port
+	unsigned := false
 	for _, pre := range []bool{false, true} {
 		tried := 0
 		for _, r := range rels {
@@ -157,6 +181,12 @@ func (g *gen) pinPort(p *Port) error {
 				continue
 			}
 			zips := portZips(r.Assets)
+			if p.Signed {
+				unsigned = unsigned || len(zips) > 0
+				if zips = signedZips(zips, r.Assets); len(zips) > 0 {
+					unsigned = false
+				}
+			}
 			if len(zips) == 0 {
 				continue
 			}
@@ -164,7 +194,9 @@ func (g *gen) pinPort(p *Port) error {
 			for _, a := range zips {
 				q := *p
 				q.Repo, q.Version, q.Released = name, versionOf(r.Tag, r.Name), day(r.Published)
-				q.License, _ = g.licence(name, info)
+				if q.License == "" {
+					q.License, _ = g.licence(name, info)
+				}
 				err := g.inspectPort(&q, a)
 				if err != nil {
 					log.Printf("port %s: %s: %v", p.Name, a.Name, err)
@@ -184,6 +216,9 @@ func (g *gen) pinPort(p *Port) error {
 	if app != nil {
 		*p = *app
 		return nil
+	}
+	if unsigned {
+		return errors.New("its releases aren't signed yet (no .minisig beside the zip)")
 	}
 	if len(rels) == 0 {
 		return errors.New("no releases: build it from its repository")
@@ -219,6 +254,14 @@ func portZips(as []asset) []asset {
 		return out[i].Size < out[j].Size
 	})
 	return out
+}
+
+// signedZips are the zips with a minisign signature (X.minisig) among a
+// release's assets.
+func signedZips(zips, assets []asset) []asset {
+	return slices.DeleteFunc(zips, func(a asset) bool {
+		return !slices.ContainsFunc(assets, func(s asset) bool { return s.Name == a.Name+".minisig" })
+	})
 }
 
 // inspectPort downloads the zip (checking GitHub's digest) and reads its

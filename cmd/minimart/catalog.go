@@ -579,7 +579,7 @@ func (f *fetcher) getLong(u string) (*http.Response, error) {
 // arrived and opens as a zip.
 func (f *fetcher) Download(u, dst string, progress func(done, total int64)) error {
 	part := dst + ".part"
-	if err := f.fetchPart(u, part, 0, progress); err != nil {
+	if err := f.fetchPart(u, part, 0, 3, progress); err != nil {
 		return err
 	}
 	zr, err := zip.OpenReader(part)
@@ -591,21 +591,22 @@ func (f *fetcher) Download(u, dst string, progress func(done, total int64)) erro
 	return os.Rename(part, dst)
 }
 
-// fetchTo saves u to dst as Download does, for files that aren't zips.
-// Downloads larger than limit bytes are refused.
+// fetchTo saves u to dst as Download does, for files that aren't zips
+// (or that the caller checks room for itself, as ports do). Downloads
+// larger than limit bytes are refused.
 func (f *fetcher) fetchTo(u, dst string, limit int64, progress func(done, total int64)) error {
 	part := dst + ".part"
-	if err := f.fetchPart(u, part, limit, progress); err != nil {
+	if err := f.fetchPart(u, part, limit, 1, progress); err != nil {
 		return err
 	}
 	return os.Rename(part, dst)
 }
 
 // fetchPart downloads u into part, which is removed again on any error. It
-// refuses a download the card has no room for (three times its size: an
-// icon pack is unpacked beside its zip), and one over limit bytes when
+// refuses a download the card has no room for (room times its size: 3 for
+// an icon pack, unpacked beside its zip), and one over limit bytes when
 // limit > 0.
-func (f *fetcher) fetchPart(u, part string, limit int64, progress func(done, total int64)) error {
+func (f *fetcher) fetchPart(u, part string, limit, room int64, progress func(done, total int64)) error {
 	resp, err := f.getLong(u)
 	if err != nil {
 		return err
@@ -617,7 +618,7 @@ func (f *fetcher) fetchPart(u, part string, limit int64, progress func(done, tot
 	if limit > 0 && resp.ContentLength > limit {
 		return fmt.Errorf("the download is too big (%d MB)", resp.ContentLength>>20)
 	}
-	if free := freeSpace(filepath.Dir(part)); free >= 0 && resp.ContentLength > 0 && free < resp.ContentLength*3 {
+	if free := freeSpace(filepath.Dir(part)); free >= 0 && resp.ContentLength > 0 && free < resp.ContentLength*room {
 		return fmt.Errorf("not enough space on the card (%d MB free): make room first (MiniTop › Storage)", free>>20)
 	}
 	out, err := os.Create(part)
