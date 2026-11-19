@@ -6,6 +6,20 @@ All notable changes are listed here. The format follows
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-19
+
+### Added
+
+- **A** on Updates shows what changed since the installed version, from the release's `CHANGELOG.md`, before it updates.
+- Downloads show their speed and the time left.
+- An installed app's page says how much room it takes on the card.
+
+### Fixed
+
+- An app update that fails part way (a full card, a zip without the app's `config.json`) no longer leaves a mix of old and new files: every new file is written beside the installed one first and only then renamed into place, and the room it needs is checked before anything is written.
+- A file larger than 256 MB in an app's zip is refused instead of being cut short without an error.
+- Downloads reach the card before they are renamed into place, so power lost just after a theme download can't leave an empty zip.
+
 ## [1.4.1] - 2026-11-12
 
 ### Changed
@@ -77,7 +91,8 @@ All notable changes are listed here. The format follows
 - The community apps list is built by `tools/catalog` from GitHub and published every day on the `catalog` release; MiniMart falls back to the copy built into it.
 - Ports that need your own game file: MiniMart finds a matching copy on the card or in your own game files folder, or lets you pick one, and copies it into place. It never downloads game data.
 
-[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/zakijss/MiniMart/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/zakijss/MiniMart/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/zakijss/MiniMart/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/zakijss/MiniMart/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/zakijss/MiniMart/compare/v1.2.0...v1.3.0

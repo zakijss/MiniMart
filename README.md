@@ -12,7 +12,7 @@ Themes, icon packs, apps and homebrew games for a Miyoo Mini Plus. Apps and port
 - Every MiniDeck app, and the community apps that install as an Onion app folder, each pinned to a release.
 - Homebrew games from [Homebrew Hub](https://hh3.gbdev.io) whose licence allows downloading.
 - Your own repositories and catalogues alongside the built-in ones.
-- Lists sorted by name, newest, size or (apps) category, and an app's README on its page.
+- Lists sorted by name, newest, size or (apps) category, and an app's README on its page, with how much room it takes on the card once installed.
 - **START** on Apps and Ports downloads the lists again, and **L2**/**R2** jump to the top or bottom of any list. A list that can't be downloaded offers to try again.
 
 
@@ -28,7 +28,7 @@ The community list is rebuilt every day by `tools/catalog`, which finds Onion ap
 
 A port of a commercial game is only the engine. MiniMart never downloads game data: you copy the files from your own copy of the game into `Roms/PORTS/Games/<game>/`, and the game shows up in Onion's Ports list as soon as the file it needs is there (MiniMart runs the same check Onion does). Community apps that need a single file from a game work the same way: MiniMart looks on the card for a copy that matches a known-good dump, then in your own game files folder if you set one in Repositories, and otherwise lets you pick the file.
 
-**Updates**, at the top of the home screen, checks the repositories for newer versions of everything MiniMart installed and updates one item or all of them, each download checked against its pinned SHA-256. Themes, icon packs and homebrew games have no versions, so they aren't checked. Pages that install something show the free space on the card and how much the install needs.
+**Updates**, at the top of the home screen, checks the repositories for newer versions of everything MiniMart installed and updates one item or all of them, each download checked against its pinned SHA-256. **A** first shows what changed since the installed version, from the release's `CHANGELOG.md`; **Y** updates all of them. An app's new files are all written beside the installed ones before any is replaced, so a full card or a bad zip leaves the installed app as it was. Downloads show their speed and the time left. Themes, icon packs and homebrew games have no versions, so they aren't checked. Pages that install something show the free space on the card and how much the install needs.
 
 ## Install
 
