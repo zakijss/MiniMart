@@ -136,3 +136,81 @@ func TestReadmeFetch(t *testing.T) {
 		t.Fatal("bad repo name fetched")
 	}
 }
+
+const sampleChangelog = `# Changelog
+
+## [Unreleased]
+
+- not out yet
+
+## [1.3.0] - 2026-11-20
+
+### Added
+
+- Update all.
+
+## [1.2.1] - 2026-11-12
+
+### Fixed
+
+- A fix.
+
+## [1.2.0] - 2026-11-01
+
+- Old news.
+`
+
+func TestChangelog(t *testing.T) {
+	got := changesSince(sampleChangelog, "1.2.0")
+	if !strings.Contains(got, "## 1.3.0 - 2026-11-20") || !strings.Contains(got, "A fix.") ||
+		strings.Contains(got, "Old news") || strings.Contains(got, "not out yet") || strings.Contains(got, "# Changelog") {
+		t.Errorf("since 1.2.0:\n%s", got)
+	}
+	if got := changesSince(sampleChangelog, "v1.2.1"); strings.Contains(got, "A fix.") || !strings.Contains(got, "Update all.") {
+		t.Errorf("since v1.2.1:\n%s", got)
+	}
+	if got := changesSince(sampleChangelog, "0.9"); !strings.Contains(got, "Old news") {
+		t.Errorf("unknown installed version keeps everything:\n%s", got)
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/o/app/v1.3.0/CHANGELOG.md" {
+			w.Write([]byte(sampleChangelog))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer srv.Close()
+	u, _ := url.Parse(srv.URL)
+	f := &fetcher{http: &http.Client{Transport: rewrite{u}}, cache: cache.New(t.TempDir())}
+	up := update{Installed: "1.2.1", app: &App{Repo: "o/app"}, ref: "v1.3.0"}
+	bs, err := f.Changelog(up)
+	if err != nil || len(bs) == 0 || bs[0].Kind != mdHeading || bs[0].Text != "1.3.0 - 2026-11-20" {
+		t.Fatalf("%+v %v", bs, err)
+	}
+	up.ref = "v9"
+	if _, err := f.Changelog(up); !errors.Is(err, errNoChangelog) {
+		t.Errorf("missing changelog: %v", err)
+	}
+	if _, err := f.Changelog(update{port: &Port{}}); !errors.Is(err, errNoChangelog) {
+		t.Errorf("port: %v", err)
+	}
+}
+
+func TestProgressLabel(t *testing.T) {
+	for _, tc := range []struct {
+		done, total int64
+		rate        float64
+		want        string
+	}{
+		{1 << 20, 4 << 20, 0, "1.0 of 4.0 MB"},
+		{1 << 20, 0, 512 << 10, "1.0 MB · 512 KB/s"},
+		{1 << 20, 4 << 20, 512 << 10, "1.0 of 4.0 MB · 512 KB/s · 7 s left"},
+		{0, 300 << 20, 2 << 20, "0.0 of 300.0 MB · 2.0 MB/s · 3 min left"},
+		{4 << 20, 4 << 20, 1 << 20, "4.0 of 4.0 MB · 1.0 MB/s"},
+	} {
+		if got := progressLabel(tc.done, tc.total, tc.rate); got != tc.want {
+			t.Errorf("progressLabel(%d, %d, %.0f) = %q, want %q", tc.done, tc.total, tc.rate, got, tc.want)
+		}
+	}
+}

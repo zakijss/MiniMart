@@ -447,10 +447,17 @@ func (s *store) progress(title, name string, work func(func(int64, int64)) error
 			mu.Unlock()
 		})
 	}()
+	// the speed over the last second or so, for the label
+	var rate float64
+	lastD, lastT := int64(0), time.Now()
 	for {
 		mu.Lock()
 		d, t := done, total
 		mu.Unlock()
+		if dt := time.Since(lastT); dt >= time.Second {
+			rate = max(0, float64(d-lastD)/dt.Seconds())
+			lastD, lastT = d, time.Now()
+		}
 		sc := s.scr
 		sc.Background()
 		sc.Header(title, name)
@@ -460,11 +467,7 @@ func (s *store) progress(title, name string, work func(func(int64, int64)) error
 			frac = float64(d) / float64(t)
 		}
 		sc.Bar(bar, frac, ui.Text)
-		label := fmt.Sprintf("%.1f MB", float64(d)/(1<<20))
-		if t > 0 {
-			label = fmt.Sprintf("%.1f of %.1f MB", float64(d)/(1<<20), float64(t)/(1<<20))
-		}
-		sc.TextCenter(ui.W/2, 256, label, ui.Small, ui.Muted)
+		sc.TextCenter(ui.W/2, 256, progressLabel(d, t, rate), ui.Small, ui.Muted)
 		sc.Present()
 		select {
 		case err := <-errc:
@@ -472,6 +475,33 @@ func (s *store) progress(title, name string, work func(func(int64, int64)) error
 		case <-time.After(150 * time.Millisecond):
 		}
 	}
+}
+
+// progressLabel says how far a download has got: "3.2 of 12.0 MB · 450
+// KB/s · 20 s left". rate is bytes a second (0 while not yet known); total
+// <= 0 when the size isn't known.
+func progressLabel(done, total int64, rate float64) string {
+	label := fmt.Sprintf("%.1f MB", float64(done)/(1<<20))
+	if total > 0 {
+		label = fmt.Sprintf("%.1f of %.1f MB", float64(done)/(1<<20), float64(total)/(1<<20))
+	}
+	if rate < 1 {
+		return label
+	}
+	if rate < 1<<20 {
+		label += fmt.Sprintf(" · %.0f KB/s", rate/(1<<10))
+	} else {
+		label += fmt.Sprintf(" · %.1f MB/s", rate/(1<<20))
+	}
+	if total > done {
+		left := int(float64(total-done)/rate) + 1 // seconds, rounded up
+		if left < 60 {
+			label += fmt.Sprintf(" · %d s left", left)
+		} else {
+			label += fmt.Sprintf(" · %d min left", (left+59)/60)
+		}
+	}
+	return label
 }
 
 // appList lists the apps of every catalogue: MiniDeck's own first, then
@@ -655,6 +685,12 @@ func readmeRows(bs []mdBlock, err error, done bool, w int) []row {
 	case err != nil:
 		return append(rs, para("Couldn't load the README: "+tnet.Explain(err).Error(), ui.Small, ui.Muted, 6, w)...)
 	}
+	return append(rs, mdRows(bs, w)...)
+}
+
+// mdRows lays out Markdown text blocks (a README or changelog) as rows.
+func mdRows(bs []mdBlock, w int) []row {
+	var rs []row
 	for i, b := range bs {
 		switch b.Kind {
 		case mdHeading:
@@ -693,6 +729,7 @@ func installedState(a App) string {
 // appDetail shows what an app does and the facts about it; A installs or
 // updates it (asking first for a community app), X removes it.
 func (s *store) appDetail(a App) {
+	used := dirSize(a.dir()) // measured again after an install or removal
 	var m *manifest
 	var merr error
 	go func() {
@@ -748,6 +785,7 @@ func (s *store) appDetail(a App) {
 			if v := a.InstalledVersion(); v != "" {
 				installed = "Installed: " + versionLabel(v)
 			}
+			installed += " · " + humanSize(used) + " on the card"
 		}
 		rs = append(rs, kv("On this Miyoo", installed, ui.Text, 6, w)...)
 		if nf := a.NeedsFile; nf != nil && a.Installed() {
@@ -829,6 +867,7 @@ func (s *store) appDetail(a App) {
 				msg = tnet.Explain(err).Error()
 			} else {
 				s.scr.Notice(s.input, "Installed", fmt.Sprintf("%s %s is installed: the download matched its pinned checksum. It appears in Apps when you leave MiniMart.", a.Name, versionLabel(ver)))
+				used = dirSize(a.dir())
 				s.provideGameFile(a)
 			}
 		case ui.X:
@@ -846,6 +885,7 @@ func (s *store) appDetail(a App) {
 				if err := RemoveApp(a); err != nil {
 					msg = err.Error()
 				}
+				used = dirSize(a.dir())
 			}
 		}
 	}

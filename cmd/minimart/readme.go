@@ -73,6 +73,61 @@ func (f *fetcher) Readme(a App) ([]mdBlock, error) {
 	return nil, errNoReadme
 }
 
+// errNoChangelog: the repository has no CHANGELOG.md at that version.
+var errNoChangelog = errors.New("no changelog")
+
+// verRe finds the version in a changelog heading ("## [1.2.0] - 2026-11-02",
+// "## v1.2").
+var verRe = regexp.MustCompile(`v?[0-9]+(\.[0-9]+)+`)
+
+// Changelog returns what changed since the installed version, from the
+// CHANGELOG.md of the release the update installs (u.ref). Like a README,
+// a pinned release's changelog is cached for good.
+func (f *fetcher) Changelog(u update) ([]mdBlock, error) {
+	if u.app == nil || !repoRe.MatchString(u.app.Repo) {
+		return nil, errNoChangelog
+	}
+	b, err := f.cached("https://raw.githubusercontent.com/"+u.app.Repo+"/"+u.ref+"/CHANGELOG.md", u.ref == "HEAD")
+	var st statusError
+	if errors.As(err, &st) && st.code == http.StatusNotFound {
+		return nil, errNoChangelog
+	}
+	if err != nil {
+		return nil, err
+	}
+	bs := markdownText(changesSince(string(b), u.Installed), readmeLimit)
+	if len(bs) == 0 {
+		return nil, errNoChangelog
+	}
+	return bs, nil
+}
+
+// changesSince keeps the sections of a Keep a Changelog style file ("##"
+// headings, newest first) from the top down to the installed version,
+// leaving out "Unreleased" and anything before the first version. If the
+// installed version isn't there, every version is kept (markdownText cuts
+// it to length).
+func changesSince(md, installed string) string {
+	var out []string
+	keep := false
+	for _, l := range strings.Split(strings.ReplaceAll(md, "\r\n", "\n"), "\n") {
+		if h, ok := strings.CutPrefix(l, "## "); ok {
+			v := verRe.FindString(h)
+			if v != "" && sameVersion(v, installed) {
+				break
+			}
+			keep = v != ""
+			if keep {
+				l = "## " + strings.NewReplacer("[", "", "]", "").Replace(h)
+			}
+		}
+		if keep {
+			out = append(out, l)
+		}
+	}
+	return strings.Join(out, "\n")
+}
+
 // mdKind is the kind of a block of README text.
 type mdKind int
 

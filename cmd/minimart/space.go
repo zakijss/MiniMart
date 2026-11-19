@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"image/color"
+	"io/fs"
+	"path/filepath"
 
 	"github.com/zakijss/minideck/ui"
 )
@@ -77,4 +79,18 @@ func drawSpace(sc *ui.Screen, x, y, w int, need int64) int {
 		y += ui.LineHeight(ui.Small)
 	}
 	return y
+}
+
+// dirSize is the bytes the files under dir take (0 if it isn't there).
+func dirSize(dir string) int64 {
+	var n int64
+	filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
+		if err == nil && d.Type().IsRegular() {
+			if fi, err := d.Info(); err == nil {
+				n += fi.Size()
+			}
+		}
+		return nil
+	})
+	return n
 }

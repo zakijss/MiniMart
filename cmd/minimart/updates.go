@@ -7,6 +7,7 @@ package main
 // games have no versions in their repositories, so they aren't listed.
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"strings"
@@ -25,6 +26,7 @@ type update struct {
 	app       *App
 	port      *Port
 	size      int64
+	ref       string // the git ref the app's update is built from (readmeRef)
 }
 
 // self reports whether the update is MiniMart itself.
@@ -56,7 +58,7 @@ func (f *fetcher) findUpdates(ss []Source) ([]update, []error) {
 			continue
 		}
 		seen[a.Folder] = true // the first catalogue listing a folder wins, as in Apps
-		avail, size := a.Version, a.Size
+		avail, size, ref := a.Version, a.Size, readmeRef(a)
 		if a.Manifest != "" {
 			m, err := f.Manifest(a)
 			if err != nil {
@@ -64,6 +66,7 @@ func (f *fetcher) findUpdates(ss []Source) ([]update, []error) {
 				continue
 			}
 			avail, size = m.Version, m.Assets.Zip.Size
+			ref = readmeRef(App{Repo: a.Repo, Zip: m.Assets.Zip.URL})
 		}
 		if avail == "" || sameVersion(have, avail) {
 			continue
@@ -72,7 +75,7 @@ func (f *fetcher) findUpdates(ss []Source) ([]update, []error) {
 		if a.Own {
 			kind = "MiniDeck app"
 		}
-		out = append(out, update{Kind: kind, Name: a.Name, Installed: have, Available: avail, app: &a, size: size})
+		out = append(out, update{Kind: kind, Name: a.Name, Installed: have, Available: avail, app: &a, size: size, ref: ref})
 	}
 	ports, err := f.Ports(ss)
 	if err != nil {
@@ -149,8 +152,8 @@ func (s *store) apply(u update, p func(int64, int64)) (string, error) {
 	return u.port.Version, nil
 }
 
-// updates checks for updates and lists them: A updates the one selected,
-// Y updates all of them after asking once.
+// updates checks for updates and lists them: A shows what's new in the one
+// selected and updates it, Y updates all of them after asking once.
 func (s *store) updates() {
 	var list []update
 	var errs []error
@@ -203,8 +206,10 @@ func (s *store) updates() {
 		case ui.X:
 			check()
 		case ui.A:
-			s.runUpdates(list[l.Sel : l.Sel+1])
-			check()
+			if s.whatsNew(list[l.Sel]) {
+				s.runUpdates(list[l.Sel : l.Sel+1])
+				check()
+			}
 		case ui.Y:
 			if s.confirmUpdates(list) {
 				s.runUpdates(list)
@@ -214,6 +219,28 @@ func (s *store) updates() {
 			handle(&l, ev)
 		}
 	}
+}
+
+// whatsNew shows the changelog entries between the installed version and
+// the update, and asks whether to update.
+func (s *store) whatsNew(u update) bool {
+	var bs []mdBlock
+	var err error
+	s.load("What's new in "+u.Name, func() ([]Item, error) {
+		bs, err = s.f.Changelog(u)
+		return nil, nil
+	})
+	w := ui.W - 56
+	rs := spaceRows(downloadNeeds(u.size), 0, w)
+	switch {
+	case errors.Is(err, errNoChangelog):
+		rs = append(rs, para("Its repository has no changelog for this version.", ui.Small, ui.Muted, 12, w)...)
+	case err != nil:
+		rs = append(rs, para("Couldn't load the changelog: "+tnet.Explain(err).Error(), ui.Small, ui.Muted, 12, w)...)
+	default:
+		rs = append(rs, mdRows(bs, w)...)
+	}
+	return s.textScreen("Update "+u.Name+"?", versionLabel(u.Installed)+" → "+versionLabel(u.Available), rs, "Update")
 }
 
 // confirmUpdates asks once before Update all, saying what it will do.
