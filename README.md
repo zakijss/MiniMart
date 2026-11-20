@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/hero.jpg" alt="A smoked black Miyoo Mini Plus on a stand showing MiniMart's home screen, with a white one on a stand and a clear purple one lying on a desk" width="100%"></p>
+<p align="center"><img src="docs/hero.jpg" alt="A white Miyoo Mini Plus on a stand on a pale stone table with teacups, showing MiniMart's home screen, with a smoked black one listing ports and a clear purple one open at an app" width="100%"></p>
 
 [![CI](https://github.com/zakijss/MiniMart/actions/workflows/ci.yml/badge.svg)](https://github.com/zakijss/MiniMart/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/zakijss/MiniMart)](https://github.com/zakijss/MiniMart/releases)
@@ -15,7 +15,7 @@ Themes, icon packs, apps, ports and homebrew games for a Miyoo Mini Plus. Apps a
 - **Updates** for everything it installed, with what changed in each version.
 - Your own repositories and catalogues alongside the built-in ones.
 
-<p align="center"><img src="docs/desk.jpg" alt="Two Miyoo Mini Plus handhelds lying on a window sill among game cartridges, one browsing MiniMart and one running MiniTop" width="100%"></p>
+<p align="center"><img src="docs/desk.jpg" alt="A white Miyoo Mini Plus on a stand on an oak desk by a keyboard and a mug, showing MiniMart's home screen, with a smoked black one beside it listing ports" width="100%"></p>
 
 ## Install
 
